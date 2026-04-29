@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 
 const NAV_LINKS = [
   { name: 'Home', path: '/' },
   { name: 'Features', path: '/solutions' },
   { name: 'About', path: '/about' },
-  { name: 'Projects', path: '/projects' },
-  { name: 'Contact', path: '/contact' },
 ];
 
 export default function Navbar() {
@@ -64,20 +63,26 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="flex items-center space-x-3">
-          <Link
-            to="/login"
-            className={`hidden md:block text-sm font-bold transition-colors ${
-              scrolled || !isLanding ? 'text-gray-600 hover:text-green-600' : 'text-gray-700 hover:text-green-600'
-            }`}
-          >
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="hidden md:flex items-center space-x-1.5 bg-white/80 border border-green-600 text-green-700 text-sm font-semibold px-4 py-2 rounded-full hover:bg-green-50 transition-all backdrop-blur-sm"
-          >
-            Sign Up
-          </Link>
+          <SignedOut>
+            <Link
+              to="/login"
+              className={`hidden md:block text-sm font-bold transition-colors ${
+                scrolled || !isLanding ? 'text-gray-600 hover:text-green-600' : 'text-gray-700 hover:text-green-600'
+              }`}
+            >
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="hidden md:flex items-center space-x-1.5 bg-white/80 border border-green-600 text-green-700 text-sm font-semibold px-4 py-2 rounded-full hover:bg-green-50 transition-all backdrop-blur-sm"
+            >
+              Sign Up
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -105,20 +110,22 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <Link
-              to="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center bg-gray-100 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-200 transition-all"
-            >
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center bg-green-50 border border-green-200 text-green-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-green-100 transition-all"
-            >
-              Sign Up
-            </Link>
+            <SignedOut>
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center bg-gray-100 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-200 transition-all"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center bg-green-50 border border-green-200 text-green-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-green-100 transition-all"
+              >
+                Sign Up
+              </Link>
+            </SignedOut>
           </div>
         </div>
       )}

@@ -36,7 +36,7 @@ const CustomDropdown = ({ label, value, options, onChange, icon: Icon }) => {
       <label className="absolute -top-2.5 left-4 px-2 bg-white text-[9px] font-bold text-blue-600 uppercase tracking-widest z-10">{label}</label>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center bg-slate-50 border ${isOpen ? 'border-blue-600 ring-4 ring-blue-500/10' : 'border-slate-200'} rounded-2xl px-4 py-3 transition-all duration-300 group shadow-sm`}
+        className={`w-full flex items-center bg-slate-50 border ${isOpen ? 'border-blue-600 ring-4 ring-blue-500/10' : 'border-slate-200'} rounded-xl px-4 py-3 transition-all duration-300 group shadow-sm`}
       >
         <Icon size={16} className={`${isOpen ? 'text-blue-600' : 'text-slate-400'} mr-3 transition-colors`} />
         <span className="text-sm font-bold text-slate-900">{value}</span>
@@ -50,7 +50,7 @@ const CustomDropdown = ({ label, value, options, onChange, icon: Icon }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white backdrop-blur-xl border border-slate-200 rounded-[1.5rem] shadow-2xl z-[100] py-2 overflow-hidden"
+            className="absolute top-full left-0 right-0 mt-2 bg-white backdrop-blur-xl border border-slate-200 rounded-xl shadow-2xl z-[100] py-2 overflow-hidden"
           >
             <div className="max-h-60 overflow-y-auto custom-scrollbar">
               {options.map((opt) => (
@@ -177,11 +177,11 @@ export default function WeatherAnalytics() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-10">
+    <div className="space-y-5 animate-fadeIn pb-6">
       {/* ─── LOCATION SELECTOR ─── */}
-      <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-6 border border-slate-200 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative z-[50] overflow-visible">
+      <div className="bg-white/80 backdrop-blur-2xl rounded-2xl p-5 border border-slate-200 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative z-[50] overflow-visible">
          <div className="flex items-center gap-5 px-4">
-            <div className="w-14 h-14 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-blue-200 ring-4 ring-slate-50">
+            <div className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 ring-4 ring-slate-50">
                <MapPin size={28} />
             </div>
             <div>
@@ -212,8 +212,8 @@ export default function WeatherAnalytics() {
          </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-[2.5rem] p-6 text-white shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-all duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:scale-[1.02] transition-all duration-500">
             <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
             <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-3">Live Forecast</p>
             <div className="flex items-center gap-4">
@@ -224,27 +224,27 @@ export default function WeatherAnalytics() {
                </div>
             </div>
          </div>
-         <div className="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
-            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-500">
-               <Thermometer size={28} />
+         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all duration-500">
+               <Thermometer size={24} />
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Temperature</p>
                <h3 className="text-2xl font-black text-slate-900 leading-none">{localData[0]?.temp || 24}°C</h3>
             </div>
          </div>
-         <div className="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
-               <Droplets size={28} />
+         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+               <Droplets size={24} />
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Humidity</p>
                <h3 className="text-2xl font-black text-slate-900 leading-none">62%</h3>
             </div>
          </div>
-         <div className="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
-            <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-500">
-               <Wind size={28} />
+         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
+            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-500">
+               <Wind size={24} />
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Wind Speed</p>
@@ -253,27 +253,27 @@ export default function WeatherAnalytics() {
          </div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] p-8 md:p-12 border border-slate-200 shadow-xl relative overflow-hidden">
-         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 mb-12 relative z-10">
+      <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 md:p-8 border border-slate-200 shadow-xl relative overflow-hidden">
+         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 relative z-10">
             <div>
-               <h3 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">Climatic Intelligence</h3>
-               <p className="text-sm text-slate-500 font-medium">Station: <span className="text-blue-600 font-bold underline underline-offset-4 decoration-blue-600/20">AS-{(selectedRegion || 'DEF').toUpperCase().slice(0,3)}-026</span> · Active Data Streams</p>
+               <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter mb-1.5">Climatic Intelligence</h3>
+               <p className="text-xs text-slate-500 font-medium">Station: <span className="text-blue-600 font-bold underline underline-offset-4 decoration-blue-600/20">AS-{(selectedRegion || 'DEF').toUpperCase().slice(0,3)}-026</span> · Active Data Streams</p>
             </div>
             
-            <div className="flex flex-wrap items-center gap-4">
-               <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200 shadow-inner">
+            <div className="flex flex-wrap items-center gap-3">
+               <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                 {['days', 'weeks', 'months', 'years'].map(f => (
                   <button
                     key={f}
                     onClick={() => setTimeFilter(f)}
-                    className={`px-6 py-2.5 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest transition-all ${timeFilter === f ? 'bg-white shadow-lg text-slate-900 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeFilter === f ? 'bg-white shadow-md text-slate-900 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
                   >
                     {f}
                   </button>
                 ))}
              </div>
 
-               <div className="flex bg-slate-100 p-1.5 rounded-[1.5rem] border border-slate-200 shadow-inner">
+               <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                 {[
                   { id: 'area', icon: AreaIcon },
                   { id: 'bar', icon: BarChart2 },
@@ -282,25 +282,25 @@ export default function WeatherAnalytics() {
                   <button 
                     key={id}
                     onClick={() => setChartType(id)}
-                    className={`p-2.5 rounded-[1.2rem] transition-all ${chartType === id ? 'bg-white shadow-lg text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`p-2 rounded-lg transition-all ${chartType === id ? 'bg-white shadow-md text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
                   >
-                    <Icon size={20} />
+                    <Icon size={18} />
                   </button>
                 ))}
              </div>
             </div>
          </div>
 
-         <div className="h-[480px] w-full relative z-10">
+         <div className="h-[380px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
                {renderChart()}
             </ResponsiveContainer>
          </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-slate-100 relative z-10">
-            <div className="flex items-center gap-6 p-6 rounded-[2rem] bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-xl group">
-               <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
-                  <Calendar size={28} />
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-slate-100 relative z-10">
+            <div className="flex items-center gap-5 p-5 rounded-2xl bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-lg group">
+               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+                  <Calendar size={24} />
                </div>
                <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Historical Peak</p>
@@ -308,9 +308,9 @@ export default function WeatherAnalytics() {
                   <p className="text-[10px] text-slate-400 font-bold tracking-tight uppercase">{selectedRegion} Region</p>
                </div>
             </div>
-            <div className="flex items-center gap-6 p-6 rounded-[2rem] bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-xl group">
-               <div className="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-500">
-                  <CloudRain size={28} />
+            <div className="flex items-center gap-5 p-5 rounded-2xl bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-lg group">
+               <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-500">
+                  <CloudRain size={24} />
                </div>
                <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Avg Rainfall</p>
@@ -318,9 +318,9 @@ export default function WeatherAnalytics() {
                   <p className="text-[10px] text-slate-400 font-bold tracking-tight uppercase">Intensity Index</p>
                </div>
             </div>
-            <div className="flex items-center gap-6 p-6 rounded-[2rem] bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-xl group">
-               <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all duration-500">
-                  <Activity size={28} />
+            <div className="flex items-center gap-5 p-5 rounded-2xl bg-slate-50 hover:bg-white transition-all border border-transparent hover:border-slate-200 hover:shadow-lg group">
+               <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all duration-500">
+                  <Activity size={24} />
                </div>
                <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Climatic Health</p>

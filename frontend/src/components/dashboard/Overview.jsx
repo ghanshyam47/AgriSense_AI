@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Search, Sparkles, Activity, ShieldCheck, 
   Droplets, Bug, TrendingUp, ChevronRight,
   Leaf, Thermometer, Wind, AlertCircle,
   CheckCircle2, Clock, Zap, Camera, Mic,
   MapPin, Calendar, ArrowRight, ChevronDown,
-  Edit3, MoreVertical, Plus, Scissors
+  Edit3, MoreVertical, Plus, Scissors, X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,7 +32,7 @@ const AGENT_DATA = [
   }
 ];
 
-const MY_CROPS = [
+const INITIAL_CROPS = [
   {
     id: 1,
     name: "Durum Wheat",
@@ -68,9 +68,89 @@ const MY_CROPS = [
   }
 ];
 
+
+const AddCropModal = ({ isOpen, onClose, onAdd }) => {
+  const [formData, setFormData] = useState({ name: '', variety: '', planted: '', harvest: '' });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name) return;
+    onAdd({
+      id: Date.now(),
+      name: formData.name,
+      variety: formData.variety || 'Standard',
+      planted: formData.planted || new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      harvest: formData.harvest || 'TBD',
+      stage: 'Seedling',
+      progress: 5,
+      health: 'Excellent',
+      icon: '🌱'
+    });
+    setFormData({ name: '', variety: '', planted: '', harvest: '' });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col"
+      >
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+          <h3 className="font-black text-slate-900 flex items-center gap-2.5 text-lg">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+              <Plus size={18} />
+            </div>
+            Register New Crop
+          </h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-xl transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crop Name</label>
+            <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none" placeholder="e.g. Soybeans" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Variety / Seed</label>
+              <input type="text" value={formData.variety} onChange={e => setFormData({...formData, variety: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none" placeholder="e.g. JS-335" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Planting Date</label>
+              <input type="text" value={formData.planted} onChange={e => setFormData({...formData, planted: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none" placeholder="e.g. Oct 12, 2023" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Est. Harvest Date</label>
+            <input type="text" value={formData.harvest} onChange={e => setFormData({...formData, harvest: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none" placeholder="e.g. Apr 2024" />
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-lg shadow-green-200">Add Crop</button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
 export default function Overview({ setIsChatOpen }) {
+  const [myCrops, setMyCrops] = useState(INITIAL_CROPS);
+  const [showAddCropModal, setShowAddCropModal] = useState(false);
+
+  const handleAddCrop = (newCrop) => {
+    setMyCrops([...myCrops, newCrop]);
+    setShowAddCropModal(false);
+  };
+
   return (
     <div className="space-y-0 pb-40">
+      {showAddCropModal && <AddCropModal isOpen={showAddCropModal} onClose={() => setShowAddCropModal(false)} onAdd={handleAddCrop} />}
       {/* ─── AI AGENT COMMAND CENTER ─── */}
       <section className="h-[80vh] flex flex-col items-center justify-center text-center px-4 relative">
         <motion.div 
@@ -235,13 +315,13 @@ export default function Overview({ setIsChatOpen }) {
             <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">My Crops</h2>
             <p className="text-xs text-green-600/60 font-black uppercase tracking-widest mt-1">Active Cultivation Pipeline</p>
           </div>
-          <button className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
+          <button onClick={() => setShowAddCropModal(true)} className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
             <Plus size={14} /> Register New Crop
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {MY_CROPS.map((crop) => (
+          {myCrops.map((crop) => (
             <motion.div
               key={crop.id}
               initial={{ opacity: 0 }}

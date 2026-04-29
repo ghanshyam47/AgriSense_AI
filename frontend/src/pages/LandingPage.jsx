@@ -7,7 +7,7 @@ import {
   Sprout, Cpu, Truck, ShoppingBasket, LayoutDashboard
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-
+import { SignedIn, SignedOut } from '@clerk/clerk-react';
 
 
 const FEATURES = [
@@ -162,12 +162,21 @@ export default function LandingPage() {
             The all-in-one agricultural platform with AI-driven crop planning, real-time market data, weather alerts, and smart irrigation — built for modern farmers.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-0 relative">
-            <Link
-              to="/signup"
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-10 py-3.5 rounded-full transition-all shadow-lg shadow-green-200/60 hover:shadow-green-300/60 hover:-translate-y-0.5 text-sm"
-            >
-              Start Free Trial
-            </Link>
+            <SignedOut>
+              <Link
+                to="/signup"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-10 py-3.5 rounded-full transition-all shadow-lg shadow-green-200/60 hover:shadow-green-300/60 hover:-translate-y-0.5 text-sm"
+              >
+                Login/Signup              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                to="/dashboard"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-10 py-3.5 rounded-full transition-all shadow-lg shadow-green-200/60 hover:shadow-green-300/60 hover:-translate-y-0.5 text-sm"
+              >
+                Welcome back — Go to Dashboard
+              </Link>
+            </SignedIn>
           </div>
         </div>
 
@@ -415,12 +424,22 @@ export default function LandingPage() {
             Join 2.8+ million farmers using AgriSense to boost yields and maximize profits. Free to start, no credit card required.
           </p>
           <div className="flex items-center justify-center w-full max-w-md mx-auto">
-            <Link
-              to="/signup"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-black px-10 py-5 rounded-2xl transition-all shadow-2xl shadow-green-200 hover:-translate-y-1 text-sm uppercase tracking-widest"
-            >
-              Start Free Trial
-            </Link>
+            <SignedOut>
+              <Link
+                to="/signup"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-black px-10 py-5 rounded-2xl transition-all shadow-2xl shadow-green-200 hover:-translate-y-1 text-sm uppercase tracking-widest"
+              >
+                Start Free Trial
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                to="/dashboard"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-black px-10 py-5 rounded-2xl transition-all shadow-2xl shadow-green-200 hover:-translate-y-1 text-sm uppercase tracking-widest"
+              >
+                Welcome back — Dashboard
+              </Link>
+            </SignedIn>
           </div>
         </div>
       </section>
@@ -434,7 +453,7 @@ export default function LandingPage() {
           </div>
           <p className="text-xs">© 2025 AgriSense Platform. All rights reserved.</p>
           <div className="flex space-x-6 text-xs">
-            {['Privacy Policy', 'Terms', 'Contact'].map(link => (
+            {['Privacy Policy', 'Terms'].map(link => (
               <a key={link} href="#" className="hover:text-green-400 transition-colors">{link}</a>
             ))}
           </div>

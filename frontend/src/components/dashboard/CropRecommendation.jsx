@@ -8,61 +8,61 @@ import {
 const QUESTIONS = [
   {
     id: 'region',
-    question: "Which geographical region is your farm located in?",
+    question: "Where is your farm located?",
     options: [
-      { label: 'North India', icon: '🏔️', description: 'Sub-tropical, fertile plains, varied seasons.' },
-      { label: 'South India', icon: '🌴', description: 'Tropical, high humidity, consistent warmth.' },
-      { label: 'West India', icon: '🏜️', description: 'Arid to semi-arid, heat resistant focus.' },
-      { label: 'East India', icon: '🎋', description: 'High rainfall, alluvial soil, humid.' },
-      { label: 'Central India', icon: '🌋', description: 'Black soil, moderate rainfall, pulses focus.' }
+      { label: 'North India', icon: '🏔️', description: 'Cold winters, hot summers.' },
+      { label: 'South India', icon: '🌴', description: 'Warm and humid all year.' },
+      { label: 'West India', icon: '🏜️', description: 'Dry and very hot.' },
+      { label: 'East India', icon: '🎋', description: 'Lots of rain and floods.' },
+      { label: 'Central India', icon: '🌋', description: 'Moderate rain, central plains.' }
     ]
   },
   {
     id: 'soil',
-    question: "What type of soil do you have in your primary field?",
+    question: "How does the soil in your field look and feel?",
     options: [
-      { label: 'Loamy', icon: '🌱', description: 'Balanced mix of sand, silt, and clay.' },
-      { label: 'Black Soil', icon: '🌑', description: 'Moisture retentive, rich in iron/lime.' },
-      { label: 'Sandy', icon: '🏖️', description: 'Fast draining, low nutrients.' },
-      { label: 'Clay', icon: '🏺', description: 'Heavy, holds water and nutrients well.' }
+      { label: 'Soft & Crumbly', icon: '🌱', description: 'Good dark soil, easy to dig.' },
+      { label: 'Black & Sticky', icon: '🌑', description: 'Cracks when dry, holds water.' },
+      { label: 'Sandy / Red', icon: '🏖️', description: 'Water drains very fast.' },
+      { label: 'Heavy Clay', icon: '🏺', description: 'Sticks to hands when wet.' }
     ]
   },
   {
     id: 'prev_crop',
-    question: "What was the last crop harvested on this field?",
+    question: "What did you grow in this field last season?",
     options: [
-      { label: 'Wheat/Rice', icon: '🌾', description: 'Heavy nutrient consumers.' },
-      { label: 'Legumes/Pulses', icon: '🥜', description: 'Nitrogen-fixing, soil enriching.' },
-      { label: 'Vegetables', icon: '🥦', description: 'Short cycle, intensive maintenance.' },
-      { label: 'Fallow (None)', icon: '🏜️', description: 'Resting field, nutrient recovery.' }
+      { label: 'Wheat or Rice', icon: '🌾', description: 'Regular food grains.' },
+      { label: 'Dal / Pulses', icon: '🥜', description: 'Chana, Moong, Toor etc.' },
+      { label: 'Vegetables', icon: '🥦', description: 'Tomato, Onion, Potato etc.' },
+      { label: 'Nothing (Empty)', icon: '🏜️', description: 'Field was left empty.' }
     ]
   },
   {
     id: 'prev_yield',
-    question: "How was the yield performance of your previous crop?",
+    question: "How was your harvest last time?",
     options: [
-      { label: 'High Yield', icon: '📈', description: 'Exceeded expectations, soil is productive.' },
-      { label: 'Average', icon: '📊', description: 'Standard performance, stable conditions.' },
-      { label: 'Low/Failed', icon: '📉', description: 'Issues with pests, weather, or soil exhaustion.' }
+      { label: 'Very Good', icon: '📈', description: 'Got a lot of crop.' },
+      { label: 'Normal / Okay', icon: '📊', description: 'Just regular amount.' },
+      { label: 'Poor / Failed', icon: '📉', description: 'Crop got ruined or very less.' }
     ]
   },
   {
     id: 'water',
-    question: "What is your main source of irrigation?",
+    question: "How do you water your crops?",
     options: [
-      { label: 'Borewell', icon: '🚰', description: 'Reliable groundwater access.' },
-      { label: 'Canal', icon: '🌊', description: 'Dependent on regional water schedules.' },
-      { label: 'Rain-fed', icon: '🌧️', description: 'Entirely dependent on seasonal monsoons.' },
-      { label: 'Drip System', icon: '💧', description: 'High efficiency, controlled delivery.' }
+      { label: 'Borewell / Motor', icon: '🚰', description: 'Can pump water anytime.' },
+      { label: 'Canal Water', icon: '🌊', description: 'Comes when government releases.' },
+      { label: 'Only Rain', icon: '🌧️', description: 'Depend on monsoon clouds.' },
+      { label: 'Drip Pipes', icon: '💧', description: 'Small pipes giving water to roots.' }
     ]
   },
   {
     id: 'budget',
-    question: "What is your investment capacity for high-value crops?",
+    question: "How much money can you spend on seeds and fertilizer?",
     options: [
-      { label: 'Premium', icon: '💎', description: 'Willing to invest in exotic/expensive crops.' },
-      { label: 'Moderate', icon: '💳', description: 'Quality hybrid seeds and basic automation.' },
-      { label: 'Economy', icon: '🪙', description: 'Low-cost, traditional farming focus.' }
+      { label: 'I can spend well', icon: '💎', description: 'Want to grow costly crops.' },
+      { label: 'Medium', icon: '💳', description: 'Normal expenses only.' },
+      { label: 'Very Little', icon: '🪙', description: 'Need very low-cost crops.' }
     ]
   }
 ];
@@ -93,40 +93,40 @@ export default function CropRecommendation() {
   };
 
   const generateRecommendation = (ans) => {
-    if (ans.budget === 'Premium' && ans.region === 'North India' && ans.soil === 'Loamy') {
+    if (ans.budget === 'I can spend well' && ans.region === 'North India' && ans.soil === 'Soft & Crumbly') {
       setRecommendation({
         crop: 'Saffron (Kesar)',
         confidence: 94,
-        reason: "Given your premium investment capacity and loamy soil in the North, Saffron is your highest value choice. It leverages temperate conditions for a 500% ROI compared to staples.",
-        tasks: ['Import Grade-A corms', 'Install precision micro-climate sensors', 'Plan for cold-storage logistics'],
-        profitPotential: 'Ultra-High',
+        reason: "Since you can invest well and have soft soil in the North, Saffron is your highest value choice. It grows well in the cold and gives a huge return.",
+        tasks: ['Buy high quality corms (seeds)', 'Set up shade nets for protection', 'Arrange cold storage for harvest'],
+        profitPotential: 'Very High',
         marketPrice: '₹2.5L / kg'
       });
-    } else if (ans.prev_crop === 'Legumes/Pulses' && ans.prev_yield === 'High Yield') {
+    } else if (ans.prev_crop === 'Dal / Pulses' && ans.prev_yield === 'Very Good') {
       setRecommendation({
-        crop: 'Basmati Rice (Export Grade)',
+        crop: 'Basmati Rice',
         confidence: 97,
-        reason: "Your soil is currently nitrogen-rich from legumes. Planting premium Basmati now will yield exceptional quality grains favored by international markets.",
-        tasks: ['Procure Pusa Basmati 1121 seeds', 'Optimize water flooding levels', 'Monitor for blast disease'],
-        profitPotential: 'Very High',
+        reason: "Growing dal last time made your soil rich. Planting good Basmati rice now will give you excellent quality grain that sells at a high price.",
+        tasks: ['Buy Pusa Basmati 1121 seeds', 'Keep the field flooded properly', 'Watch out for leaf spots'],
+        profitPotential: 'High',
         marketPrice: '₹4,500 / quintal'
       });
-    } else if (ans.region === 'South India' && ans.water === 'Drip System') {
+    } else if (ans.region === 'South India' && ans.water === 'Drip Pipes') {
       setRecommendation({
         crop: 'Vanilla Orchids',
         confidence: 91,
-        reason: "Vanilla is an expensive, high-demand crop that thrives in tropical humidity. Your drip system allows for the precise moisture control these delicate vines need.",
-        tasks: ['Setup shaded trellis structure', 'Source healthy rooted cuttings', 'Master hand-pollination techniques'],
+        reason: "Vanilla sells for a lot of money and loves the warm South weather. Your drip pipes are perfect for giving it just the right amount of water.",
+        tasks: ['Build support frames for vines', 'Get healthy cuttings to plant', 'Learn hand-pollination'],
         profitPotential: 'High (Long-term)',
         marketPrice: '₹15,000 / kg'
       });
     } else {
       setRecommendation({
-        crop: 'Black Pepper & Turmeric',
+        crop: 'Turmeric (Haldi)',
         confidence: 88,
-        reason: "A high-value intercropping strategy. Based on your previous yield data, this duo maximizes soil utility and provides multiple revenue streams with low perishability.",
-        tasks: ['Inter-crop with existing shade trees', 'Select high-curcumin varieties', 'Plan organic certification'],
-        profitPotential: 'Steady High',
+        reason: "Turmeric is a very safe and profitable crop. It uses the soil well, doesn't spoil quickly, and always has good market demand.",
+        tasks: ['Plant with some shade', 'Use organic compost', 'Keep soil moist but not flooded'],
+        profitPotential: 'Steady Income',
         marketPrice: '₹450 / kg'
       });
     }
@@ -140,7 +140,7 @@ export default function CropRecommendation() {
 
   return (
     <div className="max-w-5xl mx-auto animate-fadeIn pb-20 px-4">
-      <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-8 md:p-14 border border-slate-200 shadow-xl relative overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-10 border border-slate-200 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-500 rounded-full blur-[150px] opacity-[0.05] -mr-40 -mt-40"></div>
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500 rounded-full blur-[150px] opacity-[0.05] -ml-40 -mb-40"></div>
 
@@ -159,8 +159,8 @@ export default function CropRecommendation() {
                       <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
                     </button>
                   )}
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-green-200 flex-shrink-0">
-                    <Sparkles size={32} />
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-green-800 text-white rounded-xl flex items-center justify-center shadow-lg shadow-green-200 flex-shrink-0">
+                    <Sparkles size={28} />
                   </div>
                   <div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">AI Strategy Advisor</h2>
@@ -193,9 +193,9 @@ export default function CropRecommendation() {
                     <button
                       key={opt.label}
                       onClick={() => handleSelect(opt.label)}
-                      className="flex items-center gap-6 p-7 bg-white hover:bg-slate-50 rounded-[2.5rem] border border-slate-200 hover:border-green-600 hover:shadow-xl transition-all text-left group relative overflow-hidden"
+                      className="flex items-center gap-5 p-5 bg-white hover:bg-slate-50 rounded-2xl border border-slate-200 hover:border-green-600 hover:shadow-lg transition-all text-left group relative overflow-hidden"
                     >
-                      <div className="text-4xl bg-slate-50 w-20 h-20 rounded-3xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:bg-green-600/5 transition-all duration-500">{opt.icon}</div>
+                      <div className="text-3xl bg-slate-50 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:bg-green-600/5 transition-all duration-500">{opt.icon}</div>
                       <div className="flex-1">
                         <p className="text-xl font-black text-slate-900 group-hover:text-green-600 transition-colors">{opt.label}</p>
                         <p className="text-xs text-slate-500 font-medium mt-1.5 leading-relaxed">{opt.description}</p>
@@ -212,9 +212,9 @@ export default function CropRecommendation() {
 
           {isAnalyzing && (
             <div className="py-24 flex flex-col items-center text-center space-y-10">
-              <div className="w-32 h-32 bg-green-600/5 rounded-[2.5rem] flex items-center justify-center relative rotate-3 animate-pulse">
-                <RefreshCw size={56} className="text-green-600 animate-spin-slow" />
-                <div className="absolute inset-0 bg-green-600 rounded-[2.5rem] blur-2xl opacity-10 animate-ping"></div>
+              <div className="w-24 h-24 bg-green-600/5 rounded-2xl flex items-center justify-center relative rotate-3 animate-pulse">
+                <RefreshCw size={48} className="text-green-600 animate-spin-slow" />
+                <div className="absolute inset-0 bg-green-600 rounded-2xl blur-2xl opacity-10 animate-ping"></div>
               </div>
               <div className="space-y-4">
                 <h3 className="text-3xl font-black text-slate-900">Calculating Peak Performance...</h3>
@@ -231,8 +231,8 @@ export default function CropRecommendation() {
             <div className="space-y-12 animate-fadeIn">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-green-200">
-                    <DollarSign size={32} />
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-green-800 text-white rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
+                    <DollarSign size={28} />
                   </div>
                   <div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">Strategy Unlock</h2>
@@ -244,9 +244,9 @@ export default function CropRecommendation() {
                 </button>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-2xl rounded-[3.5rem] p-10 md:p-14 border border-slate-200 relative overflow-hidden shadow-2xl">
+              <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-8 md:p-10 border border-slate-200 relative overflow-hidden shadow-xl">
                 <div className="absolute right-0 top-0 w-80 h-80 bg-green-500 rounded-full blur-[120px] opacity-[0.05] -mr-20 -mt-20"></div>
-                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start text-slate-900">
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start text-slate-900">
                   <div className="lg:col-span-7 space-y-8">
                     <div>
                       <div className="flex items-center gap-3 mb-4">
@@ -257,18 +257,18 @@ export default function CropRecommendation() {
                     </div>
                     <p className="text-slate-500 text-lg leading-relaxed italic border-l-4 border-green-600 pl-6 font-medium">"{recommendation.reason}"</p>
                     <div className="flex flex-wrap gap-4">
-                      <div className="bg-slate-50/50 backdrop-blur-md px-8 py-5 rounded-[2rem] border border-slate-100 flex flex-col items-center min-w-[140px] shadow-sm">
+                      <div className="bg-slate-50/50 backdrop-blur-md px-6 py-4 rounded-2xl border border-slate-100 flex flex-col items-center min-w-[140px] shadow-sm">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Expected Price</p>
                         <p className="text-2xl font-black text-green-600">{recommendation.marketPrice}</p>
                       </div>
-                      <div className="bg-slate-50/50 backdrop-blur-md px-8 py-5 rounded-[2rem] border border-slate-100 flex flex-col items-center min-w-[140px] shadow-sm">
+                      <div className="bg-slate-50/50 backdrop-blur-md px-6 py-4 rounded-2xl border border-slate-100 flex flex-col items-center min-w-[140px] shadow-sm">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Profitability</p>
                         <p className="text-2xl font-black text-blue-600">{recommendation.profitPotential}</p>
                       </div>
                     </div>
                   </div>
                   <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-slate-50/50 rounded-3xl p-8 border border-slate-100 shadow-sm">
+                    <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 shadow-sm">
                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
                         <ArrowRight size={14} className="text-green-500" /> Implementation Roadmap
                       </h4>
@@ -286,25 +286,25 @@ export default function CropRecommendation() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 shadow-sm">
+                <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm">
                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Climate</p>
                   <p className="text-sm font-black text-slate-700">Match Ready</p>
                 </div>
-                <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 shadow-sm">
-                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Soil Nutrition</p>
-                  <p className="text-sm font-black text-slate-700">{answers.soil || 'Analyzing'} Ready</p>
+                <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Soil</p>
+                  <p className="text-sm font-black text-slate-700 text-truncate">{answers.soil || 'Analyzing'}</p>
                 </div>
-                <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-100 shadow-sm">
+                <div className="bg-purple-50 p-5 rounded-2xl border border-purple-100 shadow-sm">
                   <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Rotation</p>
-                  <p className="text-sm font-black text-slate-700">Post-{answers.prev_crop || 'Harvest'}</p>
+                  <p className="text-sm font-black text-slate-700">Post-Harvest</p>
                 </div>
-                <div className="bg-green-50 p-6 rounded-[2rem] border border-green-100 shadow-sm">
+                <div className="bg-green-50 p-5 rounded-2xl border border-green-100 shadow-sm">
                   <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Investment</p>
-                  <p className="text-sm font-black text-slate-700">{answers.budget || 'Strategic'} Tier</p>
+                  <p className="text-sm font-black text-slate-700">Strategic Tier</p>
                 </div>
               </div>
 
-              <button className="w-full py-6 rounded-[2.5rem] bg-green-600 text-white font-black text-sm hover:bg-green-500 transition-all shadow-2xl flex items-center justify-center gap-4 group">
+              <button className="w-full py-4 rounded-2xl bg-green-600 text-white font-black text-sm hover:bg-green-500 transition-all shadow-lg flex items-center justify-center gap-4 group">
                 Generate Full Agronomic Report <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
               </button>
             </div>
