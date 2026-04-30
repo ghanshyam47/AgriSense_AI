@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+# .env
+
+# Models (large binary files)
+MLservice/models/*.pkl
+MLservice/models/*.h5
+MLservice/models/*.json
+# MLservice/training/data/pest_images/
+
+# Uploads
+backend/uploads/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
