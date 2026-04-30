@@ -1,4 +1,7 @@
+# Dependencies
 node_modules/
+__pycache__/
+*.pyc
 
 # Production Build
 build/
@@ -7,10 +10,22 @@ dist/
 # Environment / Secrets
 .env
 
-# Debug logs
+# Models (large binary files)
+MLservice/models/*.pkl
+MLservice/models/*.h5
+MLservice/models/*.json
+# MLservice/training/data/pest_images/
+
+# Uploads
+backend/uploads/
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # IDEs and OS
+.DS_Store
+Thumbs.db
 .vscode/
