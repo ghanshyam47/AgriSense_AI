@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const required = ['GEMINI_API_KEY'];
+const required = [];
 const optional = {
   PORT: '3000',
   NODE_ENV: 'development',
@@ -12,6 +12,8 @@ const optional = {
   CLERK_PUBLISHABLE_KEY: '',
   ML_SERVICE_URL: 'http://localhost:5000',
   CORS_ORIGIN: 'http://localhost:5173',
+  OLLAMA_HOST: 'http://localhost:11434',
+  OLLAMA_MODEL: 'llama3.1',
 };
 
 // Validate required vars
@@ -27,7 +29,8 @@ export const config = {
   NODE_ENV: process.env.NODE_ENV || optional.NODE_ENV,
   MONGODB_URI: process.env.MONGODB_URI || optional.MONGODB_URI,
   REDIS_URL: process.env.REDIS_URL || optional.REDIS_URL,
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  OLLAMA_HOST: process.env.OLLAMA_HOST || optional.OLLAMA_HOST,
+  OLLAMA_MODEL: process.env.OLLAMA_MODEL || optional.OLLAMA_MODEL,
   OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY || optional.OPENWEATHER_API_KEY,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || optional.CLERK_SECRET_KEY,
   CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || optional.CLERK_PUBLISHABLE_KEY,

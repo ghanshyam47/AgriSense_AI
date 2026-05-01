@@ -1,4 +1,4 @@
-import { geminiService } from '../services/gemini.service.js';
+import { aiService } from '../services/ai.service.js';
 import Conversation from '../models/Conversation.js';
 import FarmProfile from '../models/FarmProfile.js';
 
@@ -26,8 +26,8 @@ export const sendMessage = async (req, res, next) => {
         conversation = new Conversation({ userId: req.user._id, messages: [] });
       }
 
-      // Process through Gemini agent
-      const result = await geminiService.processMessage(message, context);
+      // Process through Ollama agent
+      const result = await aiService.processMessage(message, context);
 
       // Save to conversation
       conversation.messages.push({ role: 'user', content: message });
@@ -43,7 +43,7 @@ export const sendMessage = async (req, res, next) => {
     }
 
     // Unauthenticated — process without history
-    const result = await geminiService.processMessage(message, context);
+    const result = await aiService.processMessage(message, context);
     res.json({ success: true, data: result });
   } catch (err) { next(err); }
 };

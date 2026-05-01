@@ -1,6 +1,6 @@
 import { mlService } from '../services/ml.service.js';
 import { cacheService } from '../services/cache.service.js';
-import { geminiService } from '../services/gemini.service.js';
+import { aiService } from '../services/ai.service.js';
 
 export const recommend = async (req, res, next) => {
   try {
@@ -9,7 +9,7 @@ export const recommend = async (req, res, next) => {
     
     const result = await cacheService.getOrSet(cacheKey, async () => {
       const mlResult = await mlService.predictCrop(params);
-      const reasoning = await geminiService.addReasoning('crop recommendation', params, mlResult);
+      const reasoning = await aiService.addReasoning('crop recommendation', params, mlResult);
       return { prediction: mlResult, reasoning };
     }, cacheService.TTL.CROP);
 

@@ -1,9 +1,9 @@
-import { GoogleGenAI } from '@google/genai';
+import { Ollama } from 'ollama';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 
-const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
-
+const ollama = new Ollama({ host: config.OLLAMA_HOST });
+const model = config.OLLAMA_MODEL;
 /**
  * Translate text to target language using Gemini.
  * Also serves as the voice processing layer.
@@ -19,11 +19,13 @@ export const translate = async (text, targetLang = 'hi') => {
   const langName = langNames[targetLang] || targetLang;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: `Translate the following text to ${langName}. Return ONLY the translated text, nothing else.\n\nText: ${text}`,
+    const response = await ollama.chat({
+      model,
+      messages: [
+        { role: 'user', content: `Translate the following text to ${langName}. Return ONLY the translated text, nothing else.\n\nText: ${text}` }
+      ],
     });
-    return response.text?.trim() || text;
+    return response.message.content?.trim() || text;
   } catch (err) {
     logger.error(`Translation error: ${err.message}`);
     return text; // Return original on failure
