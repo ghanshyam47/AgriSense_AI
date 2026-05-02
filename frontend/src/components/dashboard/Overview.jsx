@@ -148,6 +148,12 @@ export default function Overview({ setIsChatOpen }) {
     setShowAddCropModal(false);
   };
 
+  const handleDeleteCrop = (id) => {
+    if (window.confirm("Are you sure you want to remove this crop from your neural inventory? This action is irreversible.")) {
+      setMyCrops(myCrops.filter(crop => crop.id !== id));
+    }
+  };
+
   return (
     <div className="space-y-0 pb-40">
       {showAddCropModal && <AddCropModal isOpen={showAddCropModal} onClose={() => setShowAddCropModal(false)} onAdd={handleAddCrop} />}
@@ -159,10 +165,7 @@ export default function Overview({ setIsChatOpen }) {
           transition={{ duration: 0.8 }}
           className="mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600/5 text-green-700 rounded-full border border-green-600/10 mb-6 shadow-sm">
-            <Zap size={14} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">AgriSense Neural Engine v2.4</span>
-          </div>
+
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
             Consult your Neural Agent <br />
             <span className="text-green-600">for predictive farm insights.</span>
@@ -174,14 +177,11 @@ export default function Overview({ setIsChatOpen }) {
           onClick={() => { console.log('CHAT TRIGGER CLICKED'); setIsChatOpen(true); }}
           className="w-full max-w-xl group cursor-pointer bg-white rounded-2xl p-2 border border-slate-200 shadow-xl flex items-center gap-5 relative z-50 active:scale-[0.98] transition-all hover:border-green-600/50 hover:shadow-green-200"
         >
-          <div className="w-14 h-14 bg-green-600 text-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 pointer-events-none">
-            <Sparkles size={24} />
-          </div>
-          
+
           <div className="flex-1 flex flex-col justify-center overflow-hidden text-left py-1 pointer-events-none">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pl-4">
               <Search size={20} className="text-slate-300" />
-              <span className="text-slate-900 font-bold text-lg tracking-tight">Access Neural Command...</span>
+              <span className="text-slate-900 font-bold text-lg tracking-tight">Search your query...</span>
             </div>
           </div>
 
@@ -336,11 +336,11 @@ export default function Overview({ setIsChatOpen }) {
                   {crop.icon}
                 </div>
                 <div className="flex gap-1">
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-300 hover:text-green-600 transition-colors">
-                       <Edit3 size={16} />
-                    </button>
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-300 hover:text-red-600 transition-colors">
-                       <Scissors size={16} />
+                    <button 
+                      onClick={() => handleDeleteCrop(crop.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg text-slate-300 hover:text-red-600 transition-colors"
+                    >
+                       <X size={16} />
                     </button>
                 </div>
               </div>
@@ -387,10 +387,6 @@ export default function Overview({ setIsChatOpen }) {
                        </div>
                     </div>
                  </div>
-
-                 <button className="w-full mt-4 bg-green-600 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
-                    Analyze Growth Path
-                 </button>
               </div>
             </motion.div>
           ))}
