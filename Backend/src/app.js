@@ -1,30 +1,30 @@
-import express from 'express';
-import cors from 'cors';
-import { config } from './config/env.js';
-import { generalLimiter } from './middleware/rateLimiter.js';
-import { errorHandler } from './middleware/errorHandler.js';
-
+import express from "express";
+import cors from "cors";
+import { config } from "./config/env.js";
+import { generalLimiter } from "./middleware/rateLimiter.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 // Route imports
-import authRoutes from './routes/auth.routes.js';
-import cropRoutes from './routes/crop.routes.js';
-import irrigationRoutes from './routes/irrigation.routes.js';
-import pestRoutes from './routes/pest.routes.js';
-import marketRoutes from './routes/market.routes.js';
-import weatherRoutes from './routes/weather.routes.js';
-import alertRoutes from './routes/alert.routes.js';
-import voiceRoutes from './routes/voice.routes.js';
-import chatRoutes from './routes/chat.routes.js';
-import { logger } from './utils/logger.js';
+import authRoutes from "./routes/auth.routes.js";
+import cropRoutes from "./routes/crop.routes.js";
+import irrigationRoutes from "./routes/irrigation.routes.js";
+import pestRoutes from "./routes/pest.routes.js";
+import marketRoutes from "./routes/market.routes.js";
+import weatherRoutes from "./routes/weather.routes.js";
+import alertRoutes from "./routes/alert.routes.js";
+import voiceRoutes from "./routes/voice.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import { logger } from "./utils/logger.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./docs/swagger.js";
 
 const app = express();
 
 // ── Global Middleware ────────────────────────────────
 app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/', generalLimiter);
-
+app.use("/api/", generalLimiter);
 
 // ── Request Logger ───────────────────────────────────
 app.use((req, _res, next) => {
@@ -33,29 +33,32 @@ app.use((req, _res, next) => {
 });
 
 // ── Health Check ─────────────────────────────────────
-app.get('/api/health', (_req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({
-    status: 'ok',
-    service: 'AgriSense Backend',
+    status: "ok",
+    service: "AgriSense Backend",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
 });
 
 // ── API Routes ───────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/crop', cropRoutes);
-app.use('/api/irrigation', irrigationRoutes);
-app.use('/api/pest', pestRoutes);
-app.use('/api/market', marketRoutes);
-app.use('/api/weather', weatherRoutes);
-app.use('/api/alerts', alertRoutes);
-app.use('/api/voice', voiceRoutes);
-app.use('/api/chat', chatRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/crop", cropRoutes);
+app.use("/api/irrigation", irrigationRoutes);
+app.use("/api/pest", pestRoutes);
+app.use("/api/market", marketRoutes);
+app.use("/api/weather", weatherRoutes);
+app.use("/api/alerts", alertRoutes);
+app.use("/api/voice", voiceRoutes);
+app.use("/api/chat", chatRoutes);
+
+// ── Swagger UI ─────────────────────────────────────
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ── 404 Handler ──────────────────────────────────────
 app.use((_req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: "Route not found" });
 });
 
 // ── Global Error Handler ─────────────────────────────

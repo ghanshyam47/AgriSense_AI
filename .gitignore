@@ -2,6 +2,10 @@
 node_modules/
 __pycache__/
 *.pyc
+.venv/
+venv/
+venv39/
+MLservice/venv*/
 
 # Production Build
 build/
@@ -16,8 +20,13 @@ MLservice/models/*.h5
 MLservice/models/*.json
 # MLservice/training/data/pest_images/
 
+# Jupyter / ML temp files
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
 # Uploads
 backend/uploads/
+Backend/uploads/
 
 # Logs
 *.log
