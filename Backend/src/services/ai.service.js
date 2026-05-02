@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { Ollama } from 'ollama';
 import { config } from '../config/env.js';
 import { mlService } from './ml.service.js';
 import { weatherService } from './weather.service.js';
@@ -7,12 +7,14 @@ import { voiceService } from './voice.service.js';
 import { cacheService } from './cache.service.js';
 import { logger } from '../utils/logger.js';
 
-const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
+const ollama = new Ollama({ host: config.OLLAMA_HOST });
+const model = config.OLLAMA_MODEL;
 
-// ── Tool declarations for Gemini function calling ───
-const tools = [{
-  functionDeclarations: [
-    {
+// ── Tool declarations for Ollama function calling ───
+const tools = [
+  {
+    type: 'function',
+    function: {
       name: 'getCropRecommendation',
       description: 'Get crop recommendation based on soil and weather conditions. Use when farmer asks what to plant or grow.',
       parameters: {
@@ -27,7 +29,10 @@ const tools = [{
         required: ['soil_condition', 'season'],
       },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'getWeatherForecast',
       description: 'Get 5-day weather forecast for a location. Use when farmer asks about weather or needs weather data for planning.',
       parameters: {
@@ -39,7 +44,10 @@ const tools = [{
         required: ['lat', 'lng'],
       },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'getIrrigationPlan',
       description: 'Get irrigation schedule for a crop. Use when farmer asks about watering or irrigation.',
       parameters: {
@@ -55,7 +63,10 @@ const tools = [{
         required: ['crop', 'soil_type', 'temperature', 'humidity', 'rainfall_forecast'],
       },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'getMarketPrices',
       description: 'Get current market prices for a crop. Use when farmer asks about selling price or market rates.',
       parameters: {
@@ -67,7 +78,10 @@ const tools = [{
         required: ['crop'],
       },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'compareMSP',
       description: 'Compare market price with MSP (Minimum Support Price). Use when farmer asks if they should sell or about government price.',
       parameters: {
@@ -79,7 +93,10 @@ const tools = [{
         required: ['crop'],
       },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'detectPestFromDescription',
       description: 'Identify possible pest/disease from symptom description. Use when farmer describes crop problems without an image.',
       parameters: {
@@ -91,8 +108,8 @@ const tools = [{
         required: ['symptoms', 'crop'],
       },
     },
-  ],
-}];
+  },
+];
 
 // ── System prompt for the Agentic AI ────────────────
 const SYSTEM_PROMPT = `You are AgriSense AI — a friendly, expert agricultural advisor for Indian farmers.
@@ -193,22 +210,23 @@ const toolExecutors = {
 };
 
 /**
- * Process a chat message through the Gemini agentic pipeline.
- * 1. Send message + tool declarations to Gemini
- * 2. Execute any function calls Gemini requests
- * 3. Send results back to Gemini for final response
+ * Process a chat message through the Ollama agentic pipeline.
+ * 1. Send message + tool declarations to Ollama
+ * 2. Execute any function calls Ollama requests
+ * 3. Send results back to Ollama for final response
  * 4. Translate if needed
  */
 export const processMessage = async (message, context = {}) => {
   const { language = 'en', location, crops = [], conversationHistory = [] } = context;
 
-  // Build conversation contents
-  const contents = [];
+  // Build messages array
+  const messages = [];
+  messages.push({ role: 'system', content: SYSTEM_PROMPT });
 
   // Add recent history (last 6 messages for context)
   const recentHistory = conversationHistory.slice(-6);
   for (const msg of recentHistory) {
-    contents.push({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] });
+    messages.push({ role: msg.role === 'assistant' ? 'assistant' : 'user', content: msg.content });
   }
 
   // Add current message with context
@@ -223,63 +241,52 @@ export const processMessage = async (message, context = {}) => {
     enrichedMessage += `\n[Respond in language code: ${language}]`;
   }
 
-  contents.push({ role: 'user', parts: [{ text: enrichedMessage }] });
+  messages.push({ role: 'user', content: enrichedMessage });
 
   try {
-    // Step 1: Call Gemini with tools
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents,
-      config: {
-        tools,
-        systemInstruction: SYSTEM_PROMPT,
-      },
+    // Step 1: Call Ollama with tools
+    const response = await ollama.chat({
+      model,
+      messages,
+      tools,
     });
 
-    // Step 2: Check if Gemini wants to call functions
-    if (response.functionCalls && response.functionCalls.length > 0) {
+    // Step 2: Check if Ollama wants to call functions
+    if (response.message.tool_calls && response.message.tool_calls.length > 0) {
       const toolResults = [];
 
-      for (const call of response.functionCalls) {
-        logger.info(`🔧 Gemini calling tool: ${call.name}(${JSON.stringify(call.args)})`);
-        const executor = toolExecutors[call.name];
+      // Add the tool calls message to the history so the model knows what it called
+      messages.push(response.message);
+
+      for (const call of response.message.tool_calls) {
+        logger.info(`🔧 Ollama calling tool: ${call.function.name}(${JSON.stringify(call.function.arguments)})`);
+        const executor = toolExecutors[call.function.name];
         let result;
         if (executor) {
-          result = await executor(call.args);
+          result = await executor(call.function.arguments);
         } else {
-          result = { error: `Unknown tool: ${call.name}` };
+          result = { error: `Unknown tool: ${call.function.name}` };
         }
+        
         toolResults.push({
-          functionCall: call,
+          functionCall: call.function,
           result,
+        });
+
+        // Step 3: Add tool results back to the conversation
+        messages.push({
+          role: 'tool',
+          content: JSON.stringify(result),
         });
       }
 
-      // Step 3: Send tool results back to Gemini
-      const followUpContents = [
-        ...contents,
-        {
-          role: 'model',
-          parts: response.functionCalls.map(fc => ({ functionCall: fc })),
-        },
-        {
-          role: 'user',
-          parts: toolResults.map(tr => ({
-            functionResponse: {
-              name: tr.functionCall.name,
-              response: tr.result,
-            },
-          })),
-        },
-      ];
-
-      const finalResponse = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: followUpContents,
-        config: { systemInstruction: SYSTEM_PROMPT },
+      // Ask Ollama for the final response after tools
+      const finalResponse = await ollama.chat({
+        model,
+        messages,
       });
 
-      let responseText = finalResponse.text || 'I apologize, I could not generate a response.';
+      let responseText = finalResponse.message.content || 'I apologize, I could not generate a response.';
 
       // Step 4: Translate if needed
       if (language !== 'en') {
@@ -294,7 +301,7 @@ export const processMessage = async (message, context = {}) => {
     }
 
     // No function calls — direct text response
-    let responseText = response.text || 'I apologize, I could not generate a response.';
+    let responseText = response.message.content || 'I apologize, I could not generate a response.';
 
     if (language !== 'en') {
       responseText = await voiceService.translate(responseText, language);
@@ -303,7 +310,7 @@ export const processMessage = async (message, context = {}) => {
     return { response: responseText, toolsUsed: [], language };
 
   } catch (err) {
-    logger.error(`Gemini processMessage error: ${err.message}`);
+    logger.error(`Ollama processMessage error: ${err.message}`);
     throw new Error(`AI processing failed: ${err.message}`);
   }
 };
@@ -316,15 +323,15 @@ ML Prediction: ${JSON.stringify(mlResult)}
 Please provide a short, simple reasoning and practical advice based on this prediction. Keep it under 3 sentences.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    const response = await ollama.chat({
+      model,
+      messages: [{ role: 'user', content: prompt }],
     });
-    return response.text;
+    return response.message.content;
   } catch (err) {
-    logger.error(`Gemini reasoning error: ${err.message}`);
+    logger.error(`Ollama reasoning error: ${err.message}`);
     return "Explanation currently unavailable.";
   }
 };
 
-export const geminiService = { processMessage, addReasoning };
+export const aiService = { processMessage, addReasoning };

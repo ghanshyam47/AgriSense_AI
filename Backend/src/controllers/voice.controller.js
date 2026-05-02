@@ -1,5 +1,5 @@
 import { voiceService } from '../services/voice.service.js';
-import { geminiService } from '../services/gemini.service.js';
+import { aiService } from '../services/ai.service.js';
 
 export const translate = async (req, res, next) => {
   try {
@@ -20,7 +20,7 @@ export const processVoice = async (req, res, next) => {
       language: language || 'en',
       location: req.user?.location,
     };
-    const result = await geminiService.processMessage(text, context);
+    const result = await aiService.processMessage(text, context);
 
     res.json({ success: true, data: result });
   } catch (err) { next(err); }

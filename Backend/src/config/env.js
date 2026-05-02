@@ -12,6 +12,8 @@ const optional = {
   CLERK_PUBLISHABLE_KEY: "",
   ML_SERVICE_URL: "http://localhost:5000",
   CORS_ORIGIN: "http://localhost:5173",
+  OLLAMA_HOST: "http://localhost:11434",
+  OLLAMA_MODEL: "llama3.1",
 };
 
 // Warn if Gemini API key missing — backend will run but AI features requiring Gemini will be disabled
@@ -32,6 +34,8 @@ export const config = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   OPENWEATHER_API_KEY:
     process.env.OPENWEATHER_API_KEY || optional.OPENWEATHER_API_KEY,
+  OLLAMA_HOST: process.env.OLLAMA_HOST || optional.OLLAMA_HOST,
+  OLLAMA_MODEL: process.env.OLLAMA_MODEL || optional.OLLAMA_MODEL,
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || optional.CLERK_SECRET_KEY,
   CLERK_PUBLISHABLE_KEY:
     process.env.CLERK_PUBLISHABLE_KEY || optional.CLERK_PUBLISHABLE_KEY,
