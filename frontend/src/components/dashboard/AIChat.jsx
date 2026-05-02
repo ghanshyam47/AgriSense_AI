@@ -17,6 +17,8 @@ export default function AIChat({ isOpen, onClose }) {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +26,49 @@ export default function AIChat({ isOpen, onClose }) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    // Initialize Speech Recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      // Defaulting to Hindi, you can change this dynamically based on user preferences: e.g., 'hi-IN', 'en-US', 'ta-IN'
+      recognitionRef.current.lang = 'hi-IN';
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputValue(prev => prev + (prev ? ' ' : '') + transcript);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Browser does not support Speech Recognition");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
 
   const handleSend = () => {
     if (!inputValue.trim()) return;
@@ -159,7 +204,15 @@ export default function AIChat({ isOpen, onClose }) {
             />
 
             <div className="flex items-center gap-1 pb-1">
-              <button className="p-3 hover:bg-slate-100 rounded-full text-slate-400 hover:text-green-600 transition-all">
+              <button 
+                onClick={toggleListening}
+                className={`p-3 rounded-full transition-all ${
+                  isListening 
+                    ? 'bg-red-50 text-red-600 animate-pulse ring-2 ring-red-200' 
+                    : 'hover:bg-slate-100 text-slate-400 hover:text-green-600'
+                }`}
+                title={isListening ? "Stop Listening" : "Start Voice Input (Hindi)"}
+              >
                 <Mic size={20} />
               </button>
               <button 
