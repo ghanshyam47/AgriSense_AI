@@ -449,6 +449,17 @@ export default function AIChat({ isOpen, onClose }) {
                   <button onClick={startCamera} className="p-3 hover:bg-slate-100 rounded-full text-slate-400 hover:text-green-600 transition-all outline-none">
                     <Camera size={20} />
                   </button>
+                  <button 
+                    onClick={toggleListening}
+                    className={`p-3 rounded-full transition-all ${
+                      isListening 
+                        ? 'bg-purple-50 text-purple-600 animate-pulse ring-2 ring-purple-200' 
+                        : 'hover:bg-slate-100 text-slate-400 hover:text-purple-600'
+                    }`}
+                    title={isListening ? "Stop Listening" : "Start AI Voice Input (Hindi)"}
+                  >
+                    <Sparkles size={20} />
+                  </button>
                 </div>
                 
                 <textarea 
@@ -469,22 +480,9 @@ export default function AIChat({ isOpen, onClose }) {
                       <Send size={20} />
                     </button>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={toggleListening}
-                        className={`p-3 rounded-full transition-all ${
-                          isListening 
-                            ? 'bg-red-50 text-red-600 animate-pulse ring-2 ring-red-200' 
-                            : 'hover:bg-slate-100 text-slate-400 hover:text-green-600'
-                        }`}
-                        title={isListening ? "Stop Listening" : "Start Voice Input (Hindi)"}
-                      >
-                        <Mic size={20} />
-                      </button>
-                      <button onClick={startRecording} className="p-3 hover:bg-slate-100 rounded-full text-slate-400 hover:text-green-600 transition-all">
-                        <Zap size={20} className={isRecording ? "animate-pulse text-green-600" : ""} />
-                      </button>
-                    </div>
+                    <button onClick={startRecording} className="p-3 hover:bg-slate-100 rounded-full text-slate-400 hover:text-green-600 transition-all">
+                      <Mic size={20} />
+                    </button>
                   )}
                 </div>
               </>
