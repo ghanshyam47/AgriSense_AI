@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriSense API — Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+  <style>
+    /* ── Reset & Fonts ── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --green-900: #0a1f0e;
+      --green-800: #0f2d14;
+      --green-700: #1a4223;
+      --green-500: #2d7a3a;
+      --green-400: #3da64e;
+      --green-300: #5ec96e;
+      --green-100: #d4f4d8;
+      --accent: #68d07a;
+      --gold: #f5c842;
+      --surface: #111c13;
+      --card: #162019;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e8f5ea;
+      --muted: #7ea888;
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--green-900);
+      color: var(--text);
+    }
+
+    /* ── Top Header ── */
+    #agri-header {
+      background: linear-gradient(135deg, var(--green-800) 0%, var(--green-700) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+    }
+
+    #agri-header .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #agri-header .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--green-400), var(--accent));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    #agri-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    #agri-header h1 span {
+      color: var(--accent);
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      background: var(--green-700);
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .server-pill {
+      background: rgba(68, 210, 122, 0.1);
+      border: 1px solid rgba(68, 210, 122, 0.25);
+      border-radius: 999px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .server-pill::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(1.3);
+      }
+    }
+
+    /* ── Swagger wrapper ── */
+    #swagger-ui-wrapper {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+    }
+
+    /* ── Override Swagger UI styles ── */
+    .swagger-ui {
+      font-family: 'Inter', sans-serif !important;
+      color: var(--text) !important;
+    }
+
+    .swagger-ui .info {
+      display: none;
+    }
+
+    /* hide default header — we have ours */
+
+    .swagger-ui .scheme-container,
+    .swagger-ui .opblock-tag-section,
+    .swagger-ui .opblock,
+    .swagger-ui .model-box,
+    .swagger-ui .model-container {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 10px !important;
+    }
+
+    .swagger-ui .opblock-tag {
+      background: var(--green-800) !important;
+      border-bottom: 1px solid var(--border) !important;
+      border-radius: 8px !important;
+      color: var(--text) !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 1rem !important;
+      font-weight: 600 !important;
+      padding: 0.75rem 1rem !important;
+    }
+
+    .swagger-ui .opblock-tag:hover {
+      background: var(--green-700) !important;
+    }
+
+    .swagger-ui .opblock-summary {
+      background: transparent !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .opblock-summary-method {
+      border-radius: 5px !important;
+      font-weight: 700 !important;
+      font-size: 0.7rem !important;
+      min-width: 60px !important;
+    }
+
+    /* Method colours */
+    .swagger-ui .opblock.opblock-get {
+      border-left: 3px solid #61affe !important;
+      background: rgba(97, 175, 254, 0.04) !important;
+    }
+
+    .swagger-ui .opblock.opblock-post {
+      border-left: 3px solid var(--accent) !important;
+      background: rgba(104, 208, 122, 0.04) !important;
+    }
+
+    .swagger-ui .opblock.opblock-put {
+      border-left: 3px solid var(--gold) !important;
+      background: rgba(245, 200, 66, 0.04) !important;
+    }
+
+    .swagger-ui .opblock.opblock-patch {
+      border-left: 3px solid #fd9a00 !important;
+      background: rgba(253, 154, 0, 0.04) !important;
+    }
+
+    .swagger-ui .opblock.opblock-delete {
+      border-left: 3px solid #f93e3e !important;
+      background: rgba(249, 62, 62, 0.04) !important;
+    }
+
+    .swagger-ui .opblock-summary-description,
+    .swagger-ui .opblock-summary-path,
+    .swagger-ui label,
+    .swagger-ui p,
+    .swagger-ui h4,
+    .swagger-ui h5,
+    .swagger-ui table thead tr th,
+    .swagger-ui table tbody tr td {
+      color: var(--text) !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+
+    .swagger-ui .response-col_status {
+      color: var(--accent) !important;
+      font-weight: 600 !important;
+    }
+
+    .swagger-ui input[type=text],
+    .swagger-ui input[type=password],
+    .swagger-ui textarea,
+    .swagger-ui select {
+      background: var(--green-900) !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+      border-radius: 6px !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+
+    .swagger-ui .btn {
+      border-radius: 6px !important;
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 600 !important;
+    }
+
+    .swagger-ui .btn.execute {
+      background: var(--green-500) !important;
+      border-color: var(--green-400) !important;
+      color: #fff !important;
+    }
+
+    .swagger-ui .btn.execute:hover {
+      background: var(--green-400) !important;
+    }
+
+    .swagger-ui .btn.authorize {
+      background: transparent !important;
+      border: 1px solid var(--accent) !important;
+      color: var(--accent) !important;
+    }
+
+    .swagger-ui .btn.authorize svg {
+      fill: var(--accent) !important;
+    }
+
+    .swagger-ui .scheme-container {
+      padding: 1rem !important;
+      margin-bottom: 1.5rem !important;
+    }
+
+    .swagger-ui .model-title,
+    .swagger-ui section.models h4 {
+      color: var(--accent) !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+
+    .swagger-ui .model {
+      color: var(--text) !important;
+    }
+
+    .swagger-ui pre.microlight,
+    .swagger-ui .highlight-code>.microlight {
+      background: var(--green-900) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 6px !important;
+      color: var(--green-300) !important;
+      font-size: 0.82rem !important;
+    }
+
+    .swagger-ui .arrow {
+      fill: var(--muted) !important;
+    }
+
+    .swagger-ui .expand-operation svg {
+      fill: var(--muted) !important;
+    }
+
+    .swagger-ui section.models {
+      border: 1px solid var(--border) !important;
+      border-radius: 10px !important;
+    }
+
+    .swagger-ui section.models.is-open h4 {
+      border-bottom: 1px solid var(--border) !important;
+    }
+
+    .swagger-ui .responses-inner h4,
+    .swagger-ui .responses-inner h5 {
+      color: var(--muted) !important;
+    }
+
+    .swagger-ui .response-col_description {
+      color: var(--text) !important;
+    }
+
+    /* Auth modal */
+    .swagger-ui .dialog-ux .modal-ux {
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 12px !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-header {
+      background: var(--green-800) !important;
+      border-radius: 12px 12px 0 0 !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-header h3 {
+      color: var(--text) !important;
+    }
+
+    /* Tag descriptions */
+    .swagger-ui .opblock-tag small {
+      color: var(--muted) !important;
+    }
+
+    /* Parameters table */
+    .swagger-ui table.parameters {
+      border-collapse: separate;
+      border-spacing: 0 0.3rem;
+    }
+
+    .swagger-ui table.parameters tbody tr {
+      background: rgba(255, 255, 255, 0.02) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .parameter__name {
+      color: var(--accent) !important;
+      font-weight: 600 !important;
+    }
+
+    .swagger-ui .parameter__type {
+      color: var(--gold) !important;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--green-900);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--green-600, #256b30);
+      border-radius: 3px;
+    }
+
+    /* Footer */
+    #agri-footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Custom Header -->
+  <header id="agri-header">
+    <div class="brand">
+      <div class="logo">🌾</div>
+      <h1>AgriSense <span>API</span></h1>
+      <span class="badge">v1.0.0</span>
+    </div>
+    <div class="header-meta">
+      <div class="server-pill">localhost:3000</div>
+      <span>OpenAPI 3.0</span>
+    </div>
+  </header>
+
+  <!-- Swagger UI Mount Point -->
+  <div id="swagger-ui-wrapper">
+    <div id="swagger-ui"></div>
+  </div>
+
+  <footer id="agri-footer">
+    AgriSense AI — Backend API &nbsp;·&nbsp; Generated with OpenAPI 3.0 &nbsp;·&nbsp;
+    <a href="swagger.yaml" style="color: var(--accent);" target="_blank">Download spec</a>
+  </footer>
+
+  <!-- Swagger UI JS -->
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = () => {
+      SwaggerUIBundle({
+        url: './swagger.yaml',
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: 'StandaloneLayout',
+        deepLinking: true,
+        displayRequestDuration: true,
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 2,
+        docExpansion: 'list',
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        tryItOutEnabled: true,
+        persistAuthorization: true,
+        syntaxHighlight: {
+          activate: true,
+          theme: 'monokai'
+        }
+      });
+    };
+  </script>
+</body>
+
+</html>
