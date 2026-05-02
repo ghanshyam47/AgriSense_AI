@@ -1,0 +1,1109 @@
+openapi: 3.0.3
+info:
+  title: AgriSense AI — Backend API
+  description: |
+    Agentic AI backend for the AgriSense agricultural platform.
+    Powered by Node.js / Express, Google Gemini, and a Python ML service.
+
+    **Authentication:** Pass a JWT in the `Authorization: Bearer <token>` header for protected routes.
+
+    **ML Service:** Routes under `/api/crop`, `/api/irrigation`, and `/api/pest` proxy to the internal Flask ML service on port 5000.
+  version: 1.0.0
+  contact:
+    name: AgriSense Team
+    url: https://github.com/ghanshyam47/AgriSense_AI
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: http://localhost:5000
+    description: ML Service (Flask) — direct access
+
+tags:
+  - name: Health
+    description: Server health check
+  - name: Auth
+    description: User profile and farm management
+  - name: Chat
+    description: AI farming assistant (Gemini powered)
+  - name: Crop
+    description: Crop recommendation and information
+  - name: Irrigation
+    description: Smart irrigation planning
+  - name: Pest
+    description: Pest and disease detection
+  - name: Market
+    description: Market prices and intelligence
+  - name: Weather
+    description: Weather forecasts and agri-alerts
+  - name: Alerts
+    description: Smart alert management
+  - name: Voice
+    description: Voice processing and translation
+  - name: ML Service
+    description: Direct Flask ML service endpoints
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid input data"
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: AgriSense Backend
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+          example: 3600.42
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: user_abc123
+        name:
+          type: string
+          example: Ravi Kumar
+        email:
+          type: string
+          example: ravi@example.com
+        farmProfile:
+          $ref: '#/components/schemas/FarmProfile'
+
+    FarmProfile:
+      type: object
+      properties:
+        farmName:
+          type: string
+          example: Green Valley Farm
+        location:
+          type: string
+          example: Punjab, India
+        areaHectares:
+          type: number
+          example: 5.5
+        soilType:
+          type: string
+          enum: [sandy, loamy, clay, silt, clay-loam]
+          example: loamy
+        primaryCrops:
+          type: array
+          items:
+            type: string
+          example: [wheat, rice]
+
+    ChatMessage:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: When should I irrigate my wheat crop?
+        language:
+          type: string
+          example: en
+
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+          example: For wheat at the tillering stage, irrigate every 7-10 days...
+        sessionId:
+          type: string
+          example: sess_xyz
+
+    CropRecommendSimple:
+      type: object
+      properties:
+        soil_condition:
+          type: string
+          enum: [dry, wet, normal]
+          example: normal
+        season:
+          type: string
+          enum: [kharif, rabi, zaid]
+          example: kharif
+        temperature:
+          type: number
+          example: 28
+        humidity:
+          type: number
+          example: 75
+        rainfall:
+          type: number
+          example: 200
+
+    CropRecommendTechnical:
+      type: object
+      required: [N, P, K, temperature, humidity, ph, rainfall]
+      properties:
+        N:
+          type: number
+          description: Nitrogen content
+          example: 90
+        P:
+          type: number
+          description: Phosphorus content
+          example: 42
+        K:
+          type: number
+          description: Potassium content
+          example: 43
+        temperature:
+          type: number
+          example: 20.8
+        humidity:
+          type: number
+          example: 82.0
+        ph:
+          type: number
+          example: 6.5
+        rainfall:
+          type: number
+          example: 202.9
+
+    CropRecommendResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              crop:
+                type: string
+                example: rice
+              confidence:
+                type: number
+                example: 0.94
+              notes:
+                type: string
+
+    IrrigationPlanRequest:
+      type: object
+      required: [crop, soil_type, temperature, humidity, rainfall_forecast]
+      properties:
+        crop:
+          type: string
+          example: wheat
+        soil_type:
+          type: string
+          enum: [sandy, loamy, clay, silt]
+          example: loamy
+        temperature:
+          type: number
+          example: 24
+        humidity:
+          type: number
+          example: 60
+        rainfall_forecast:
+          type: array
+          items:
+            type: number
+          minItems: 5
+          maxItems: 5
+          example: [0, 5, 0, 0, 2]
+        wind_speed:
+          type: number
+          example: 12
+        crop_stage:
+          type: string
+          example: tillering
+
+    IrrigationPlanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        plan:
+          type: object
+          properties:
+            summary:
+              type: string
+            dailyPlan:
+              type: array
+              items:
+                type: object
+                properties:
+                  day:
+                    type: integer
+                  irrigate:
+                    type: boolean
+                  amount_mm:
+                    type: number
+                  reason:
+                    type: string
+
+    PestDetectionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        detection:
+          type: object
+          properties:
+            disease:
+              type: string
+              example: Leaf Rust
+            confidence:
+              type: number
+              example: 0.91
+            severity:
+              type: string
+              enum: [low, moderate, high]
+            treatment:
+              type: string
+            preventionTips:
+              type: array
+              items:
+                type: string
+
+    Alert:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: alert_123
+        type:
+          type: string
+          enum: [weather, market, pest, irrigation]
+        title:
+          type: string
+          example: Rain Expected
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  # ── Health ──────────────────────────────────────────
+  /health:
+    get:
+      tags: [Health]
+      summary: Server health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # ── Auth ─────────────────────────────────────────────
+  /auth/profile:
+    get:
+      tags: [Auth]
+      summary: Get user profile
+      operationId: getProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags: [Auth]
+      summary: Update user profile
+      operationId: updateProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Ravi Kumar
+                phone:
+                  type: string
+                  example: "+91-9876543210"
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+
+  /auth/farm:
+    put:
+      tags: [Auth]
+      summary: Update farm profile
+      operationId: updateFarmProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FarmProfile'
+      responses:
+        '200':
+          description: Updated farm profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FarmProfile'
+        '401':
+          description: Unauthorized
+
+  # ── Chat ─────────────────────────────────────────────
+  /chat/message:
+    post:
+      tags: [Chat]
+      summary: Send message to AI farming assistant
+      operationId: sendChatMessage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessage'
+      responses:
+        '200':
+          description: AI reply
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '429':
+          description: Rate limit exceeded
+
+  /chat/history:
+    get:
+      tags: [Chat]
+      summary: Get chat history
+      operationId: getChatHistory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Chat history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                          enum: [user, assistant]
+                        content:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+    delete:
+      tags: [Chat]
+      summary: Clear chat history
+      operationId: clearChatHistory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: History cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  # ── Crop ─────────────────────────────────────────────
+  /crop/recommend:
+    post:
+      tags: [Crop]
+      summary: Get crop recommendations
+      operationId: recommendCrop
+      description: |
+        Accepts two input modes:
+        - **Simple**: `soil_condition` + `season` (farmer-friendly)
+        - **Technical**: `N`, `P`, `K`, `temperature`, `humidity`, `ph`, `rainfall`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CropRecommendSimple'
+                - $ref: '#/components/schemas/CropRecommendTechnical'
+            examples:
+              simple:
+                summary: Simple input
+                value:
+                  soil_condition: normal
+                  season: kharif
+                  temperature: 28
+                  humidity: 75
+                  rainfall: 200
+              technical:
+                summary: Technical input
+                value:
+                  N: 90
+                  P: 42
+                  K: 43
+                  temperature: 20.8
+                  humidity: 82.0
+                  ph: 6.5
+                  rainfall: 202.9
+      responses:
+        '200':
+          description: Top 3 crop recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CropRecommendResponse'
+        '400':
+          description: Missing required fields
+        '429':
+          description: Rate limit exceeded
+
+  /crop/info/{cropName}:
+    get:
+      tags: [Crop]
+      summary: Get crop information
+      operationId: getCropInfo
+      parameters:
+        - name: cropName
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: Crop details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      season:
+                        type: string
+                      waterRequirement:
+                        type: string
+                      soilType:
+                        type: array
+                        items:
+                          type: string
+                      growthDays:
+                        type: integer
+                      commonPests:
+                        type: array
+                        items:
+                          type: string
+        '404':
+          description: Crop not found
+
+  # ── Irrigation ────────────────────────────────────────
+  /irrigation/plan:
+    post:
+      tags: [Irrigation]
+      summary: Generate 5-day irrigation plan
+      operationId: irrigationPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IrrigationPlanRequest'
+            example:
+              crop: wheat
+              soil_type: loamy
+              temperature: 24
+              humidity: 60
+              rainfall_forecast: [0, 5, 0, 0, 2]
+              wind_speed: 12
+              crop_stage: tillering
+      responses:
+        '200':
+          description: Irrigation plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IrrigationPlanResponse'
+        '400':
+          description: Missing required fields
+        '429':
+          description: Rate limit exceeded
+
+  /irrigation/today:
+    get:
+      tags: [Irrigation]
+      summary: Get today's irrigation recommendation
+      operationId: irrigationToday
+      responses:
+        '200':
+          description: Today's recommendation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  irrigate:
+                    type: boolean
+                  amount_mm:
+                    type: number
+                  reason:
+                    type: string
+
+  # ── Pest ─────────────────────────────────────────────
+  /pest/detect:
+    post:
+      tags: [Pest]
+      summary: Detect pest or disease from crop image
+      operationId: detectPest
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Crop image — JPG, PNG, WEBP, BMP (max 10 MB)
+      responses:
+        '200':
+          description: Detection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PestDetectionResponse'
+        '400':
+          description: No image or invalid file type
+        '429':
+          description: Rate limit exceeded
+
+  /pest/common/{crop}:
+    get:
+      tags: [Pest]
+      summary: List common pests for a crop
+      operationId: getCommonPests
+      parameters:
+        - name: crop
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: List of common pests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        type:
+                          type: string
+                          enum: [pest, disease]
+                        season:
+                          type: string
+                        severity:
+                          type: string
+                          enum: [low, moderate, high]
+
+  # ── Market ────────────────────────────────────────────
+  /market/prices/{crop}:
+    get:
+      tags: [Market]
+      summary: Get current market prices
+      operationId: getMarketPrices
+      parameters:
+        - name: crop
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: Market prices across mandis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  crop:
+                    type: string
+                  prices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mandi:
+                          type: string
+                        price:
+                          type: number
+                        unit:
+                          type: string
+                          example: "₹/quintal"
+                        date:
+                          type: string
+                          format: date
+
+  /market/msp/{crop}:
+    get:
+      tags: [Market]
+      summary: Get Minimum Support Price (MSP)
+      operationId: getMarketMSP
+      parameters:
+        - name: crop
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: Government MSP for the crop
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  crop:
+                    type: string
+                  msp:
+                    type: number
+                    example: 2275
+                  unit:
+                    type: string
+                    example: "₹/quintal"
+                  season:
+                    type: string
+                    example: "rabi 2025-26"
+
+  /market/trend/{crop}:
+    get:
+      tags: [Market]
+      summary: Get 30-day price trend
+      operationId: getMarketTrend
+      parameters:
+        - name: crop
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: 30-day price trend
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  crop:
+                    type: string
+                  trend:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        price:
+                          type: number
+
+  /market/advice/{crop}:
+    get:
+      tags: [Market]
+      summary: Get AI sell/hold/buy advice
+      operationId: getMarketAdvice
+      parameters:
+        - name: crop
+          in: path
+          required: true
+          schema:
+            type: string
+          example: wheat
+      responses:
+        '200':
+          description: Market advice
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  crop:
+                    type: string
+                  advice:
+                    type: string
+                    enum: [sell, hold, buy]
+                  reasoning:
+                    type: string
+                  confidence:
+                    type: string
+                    enum: [low, medium, high]
+
+  # ── Weather ───────────────────────────────────────────
+  /weather/forecast:
+    get:
+      tags: [Weather]
+      summary: Get 5-day weather forecast
+      operationId: getWeatherForecast
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+          example: 30.9
+        - name: lon
+          in: query
+          schema:
+            type: number
+          example: 75.85
+        - name: city
+          in: query
+          schema:
+            type: string
+          example: Ludhiana
+      responses:
+        '200':
+          description: 5-day forecast
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  city:
+                    type: string
+                  forecast:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        temp:
+                          type: number
+                        humidity:
+                          type: number
+                        rain:
+                          type: number
+                        description:
+                          type: string
+
+  /weather/current:
+    get:
+      tags: [Weather]
+      summary: Get current weather conditions
+      operationId: getCurrentWeather
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lon
+          in: query
+          schema:
+            type: number
+        - name: city
+          in: query
+          schema:
+            type: string
+          example: Ludhiana
+      responses:
+        '200':
+          description: Current weather
+
+  /weather/agri-alerts:
+    get:
+      tags: [Weather]
+      summary: Get weather-based agricultural alerts
+      operationId: getAgriAlerts
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lon
+          in: query
+          schema:
+            type: number
+        - name: city
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agricultural weather alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [heat_stress, frost_risk, flood_warning, drought_risk]
+                        severity:
+                          type: string
+                          enum: [low, moderate, high]
+                        message:
+                          type: string
+
+  # ── Alerts ────────────────────────────────────────────
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: Get all alerts for the user
+      operationId: getAlerts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: unread
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Paginated list of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /alerts/unread:
+    get:
+      tags: [Alerts]
+      summary: Get unread alert count
+      operationId: getUnreadCount
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 3
+
+  /alerts/{id}/read:
+    patch:
+      tags: [Alerts]
+      summary: Mark alert as read
+      operationId: markAlertRead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: alert_123
+      responses:
+        '200':
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /alerts/{id}:
+    delete:
+      tags: [Alerts]
+      summary: Delete an alert
+      operationId: deleteAlert
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: alert_123
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # ── Voice ─────────────────────────────────────────────
+  /voice/translate:
+    post:
+      tags: [Voice]
+      summary: Translate text between languages
+      operationId: translateText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, from, to]
+              properties:
+                text:
+                  type: string
+                  example: "आज गेहूं की सिंचाई कब करें?"
+                from:
+                  type: string
+                  example: hi
+                to:
+                  type: string
+                  example: en
+      responses:
+        '200':
+          description: Translated text
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  translatedText:
+                    type: string
+                  from:
+                    type: string
+                  to:
+                    type: string
+
+  /voice/process:
+    post:
+      tags: [Voice]
+      summary: Process voice query
+      operationId: processVoice
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: Audio file (WAV / MP3 / OGG)
+                language:
+                  type: string
+                  example: hi
+      responses:
+        '200':
+          description: Transcript and AI reply
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transcript:
+                    type: string
+                  reply:
+                    type: string
+                  replyAudio:
+                    type: string
+                    description: Base64 encoded audio or URL
