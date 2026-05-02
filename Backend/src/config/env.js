@@ -6,7 +6,7 @@ const optional = {
   PORT: "3000",
   NODE_ENV: "development",
   MONGODB_URI: "mongodb://localhost:27017/agrisense",
-  REDIS_URL: "redis://localhost:6379",
+  REDIS_URL: "redis://default:nK3gVc55A5fF7Pehein9ORH0OCZiLPd3@redis-19360.c14.us-east-1-3.ec2.cloud.redislabs.com:19360",
   OPENWEATHER_API_KEY: "",
   CLERK_SECRET_KEY: "",
   CLERK_PUBLISHABLE_KEY: "",
