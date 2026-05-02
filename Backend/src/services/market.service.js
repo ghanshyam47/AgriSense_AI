@@ -146,10 +146,55 @@ export const getTrend = async (commodity, state = null, days = 7) => {
   };
 };
 
-/** Seed mock market prices into MongoDB for trend analysis */
+/** Fetch market prices from external API, with mock fallback for trend analysis */
 export const syncMarketPrices = async () => {
   logger.info('📊 Syncing market prices...');
   let count = 0;
+
+  try {
+    const apiKey = process.env.DATA_GOV_API_KEY; // Environment variable for Real API integration
+
+    if (apiKey) {
+      logger.info('🌐 Fetching live data from data.gov.in API...');
+      // Note: Endpoint may vary, using a common general mandi prices resource ID as an example
+      const response = await fetch(`https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${apiKey}&format=json&limit=500`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.records && data.records.length > 0) {
+          for (const record of data.records) {
+            // Mapping fields as per data.gov.in structure (state, market, commodity, modal_price)
+            if (!record.commodity || !record.modal_price) continue;
+            
+            await MarketPrice.create({
+              commodity: record.commodity.toLowerCase(),
+              market: record.market || 'Unknown',
+              state: record.state || 'Unknown',
+              price: parseFloat(record.modal_price),
+              unit: 'quintal', 
+              msp: MSP_TABLE[record.commodity.toLowerCase()] || null,
+              date: new Date(),
+            });
+            count++;
+          }
+          logger.info(`✅ Synced ${count} live market prices from API`);
+          await cacheService.invalidate('market:*');
+          return; // Exit successful execution
+        } else {
+          logger.warn('⚠️ API returned empty records. Falling back to mock data.');
+        }
+      } else {
+        logger.warn(`⚠️ API request failed (Status: ${response.status}). Falling back to mock data.`);
+      }
+    } else {
+      logger.info('ℹ️ No DATA_GOV_API_KEY found in .env. Falling back to mock data generation.');
+    }
+  } catch (err) {
+    logger.error(`❌ Live Market Sync Error: ${err.message}. Falling back to mock data.`);
+  }
+
+  // Fallback to Mock Data Simulation
+  logger.info('🔄 Using Mock Data for Market sync simulation...');
   for (const [commodity, markets] of Object.entries(MOCK_MARKETS)) {
     for (const m of markets) {
       const price = m.price + Math.round((Math.random() - 0.5) * 200);
@@ -161,7 +206,7 @@ export const syncMarketPrices = async () => {
       count++;
     }
   }
-  logger.info(`✅ Synced ${count} market prices`);
+  logger.info(`✅ Synced ${count} mock market prices`);
   await cacheService.invalidate('market:*');
 };
 
