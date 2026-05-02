@@ -44,8 +44,24 @@ const SideNavItem = ({ icon: Icon, label, active, onClick }) => (
   </button>
 );
 
-const AddFarmModal = ({ isOpen, onClose }) => {
+const AddFarmModal = ({ isOpen, onClose, onSave, initialData }) => {
+  const [formData, setFormData] = React.useState({ name: '', area: '', unit: 'Acres', crop: '', soil: 'Loamy' });
+
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    } else {
+      setFormData({ name: '', area: '', unit: 'Acres', crop: '', soil: 'Loamy' });
+    }
+  }, [initialData, isOpen]);
+
   if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name) return;
+    onSave(formData);
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn">
@@ -60,71 +76,68 @@ const AddFarmModal = ({ isOpen, onClose }) => {
             <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
               <Home size={18} />
             </div>
-            Add New Farm
+            {initialData ? 'Edit Farm' : 'Add New Farm'}
           </h3>
           <button onClick={onClose} className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-xl transition-colors">
             <X size={18} />
           </button>
         </div>
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Showcase Image</label>
-            <label className="block border-2 border-dashed border-slate-200 rounded-xl px-4 py-6 text-center hover:bg-slate-50 hover:border-green-300 transition-all cursor-pointer group">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-green-100 transition-colors">
-                <ImagePlus size={18} className="text-slate-400 group-hover:text-green-600 transition-colors" />
-              </div>
-              <p className="text-sm font-medium text-slate-600 group-hover:text-green-700 transition-colors">Click to upload cover image</p>
-              <p className="text-xs text-slate-400 mt-1">PNG, JPG, or WEBP (max 5MB)</p>
-              <input type="file" accept="image/*" className="hidden" />
-            </label>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Name</label>
-            <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="e.g. North Plot" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Area</label>
-              <input type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="Size" />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Showcase Image</label>
+              <label className="block border-2 border-dashed border-slate-200 rounded-xl px-4 py-6 text-center hover:bg-slate-50 hover:border-green-300 transition-all cursor-pointer group">
+                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-green-100 transition-colors">
+                  <ImagePlus size={18} className="text-slate-400 group-hover:text-green-600 transition-colors" />
+                </div>
+                <p className="text-sm font-medium text-slate-600 group-hover:text-green-700 transition-colors">Click to upload cover image</p>
+                <p className="text-xs text-slate-400 mt-1">PNG, JPG, or WEBP (max 5MB)</p>
+                <input type="file" accept="image/*" className="hidden" />
+              </label>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</label>
-              <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all appearance-none cursor-pointer">
-                <option>Acres</option>
-                <option>Hectares</option>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Name</label>
+              <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="e.g. North Plot" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Area</label>
+                <input type="number" required value={formData.area} onChange={(e) => setFormData({...formData, area: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="Size" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</label>
+                <select value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all appearance-none cursor-pointer">
+                  <option>Acres</option>
+                  <option>Hectares</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Primary Crop</label>
+              <input type="text" required value={formData.crop} onChange={(e) => setFormData({...formData, crop: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="e.g. Wheat, Rice" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Soil Type</label>
+              <select value={formData.soil} onChange={(e) => setFormData({...formData, soil: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all appearance-none cursor-pointer">
+                <option>Loamy</option>
+                <option>Clay</option>
+                <option>Sandy</option>
+                <option>Silt</option>
               </select>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Primary Crop</label>
-            <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all placeholder:text-slate-400" placeholder="e.g. Wheat, Rice" />
+          <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/80">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-lg shadow-green-200 hover:-translate-y-0.5">Save Farm Details</button>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Soil Type</label>
-            <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all appearance-none cursor-pointer">
-              <option>Loamy</option>
-              <option>Clay</option>
-              <option>Sandy</option>
-              <option>Silt</option>
-            </select>
-          </div>
-        </div>
-        <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/80">
-          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-colors">Cancel</button>
-          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-lg shadow-green-200 hover:-translate-y-0.5">Save Farm Details</button>
-        </div>
+        </form>
       </motion.div>
     </div>
   );
 };
 
-const ManageFarmsModal = ({ isOpen, onClose, onAdd }) => {
+const ManageFarmsModal = ({ isOpen, onClose, onAdd, farms, onDelete, onEdit }) => {
   if (!isOpen) return null;
-
-  const farms = [
-    { id: 1, name: 'North Plot', area: '12 Acres', crop: 'Wheat', soil: 'Soft & Crumbly' },
-    { id: 2, name: 'South Garden', area: '5 Acres', crop: 'Vegetables', soil: 'Sandy' }
-  ];
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn">
@@ -147,7 +160,7 @@ const ManageFarmsModal = ({ isOpen, onClose, onAdd }) => {
         </div>
         <div className="p-6 overflow-y-auto custom-scrollbar bg-slate-50/50 flex-1">
           <div className="space-y-4">
-            {farms.map(farm => (
+            {farms.length > 0 ? farms.map(farm => (
               <div key={farm.id} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-blue-300 transition-all hover:shadow-md">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 shrink-0 border border-green-100 group-hover:bg-green-600 group-hover:text-white transition-colors">
@@ -155,17 +168,19 @@ const ManageFarmsModal = ({ isOpen, onClose, onAdd }) => {
                   </div>
                   <div>
                     <h4 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">{farm.name}</h4>
-                    <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">{farm.area} • {farm.crop} • {farm.soil}</p>
+                    <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">{farm.area} {farm.unit} • {farm.crop} • {farm.soil}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button className="px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100">Edit</button>
-                  <button className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-red-100">Delete</button>
+                  <button onClick={() => onEdit(farm)} className="px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100">Edit</button>
+                  <button onClick={() => onDelete(farm.id)} className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-red-100">Delete</button>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-6 text-slate-400 font-medium">No farms added yet.</div>
+            )}
             
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50 transition-colors">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { onClose(); onAdd(); }}>
                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3">
                  <Home size={24} />
                </div>
@@ -199,6 +214,37 @@ export default function Dashboard({ language, setLanguage }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const notificationRef = useRef(null);
   const languageRef = useRef(null);
+
+  const [farms, setFarms] = useState([
+    { id: 1, name: 'North Plot', area: '12', unit: 'Acres', crop: 'Wheat', soil: 'Loamy' },
+    { id: 2, name: 'South Garden', area: '5', unit: 'Acres', crop: 'Vegetables', soil: 'Sandy' }
+  ]);
+  const [farmToEdit, setFarmToEdit] = useState(null);
+
+  const handleSaveFarm = (farmData) => {
+    if (farmToEdit) {
+      setFarms(farms.map(f => f.id === farmToEdit.id ? { ...farmData, id: farmToEdit.id } : f));
+    } else {
+      setFarms([...farms, { ...farmData, id: Date.now() }]);
+    }
+    setShowAddFarmModal(false);
+    setFarmToEdit(null);
+  };
+
+  const handleDeleteFarm = (id) => {
+    setFarms(farms.filter(f => f.id !== id));
+  };
+
+  const handleEditFarm = (farm) => {
+    setFarmToEdit(farm);
+    setShowManageFarmsModal(false);
+    setShowAddFarmModal(true);
+  };
+
+  const handleOpenAddFarm = () => {
+    setFarmToEdit(null);
+    setShowAddFarmModal(true);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -240,7 +286,7 @@ export default function Dashboard({ language, setLanguage }) {
       case 'irrigation': return <IrrigationManager bookmarks={bookmarks} toggleBookmark={toggleBookmark} />;
       case 'recommendation': return <CropRecommendation />;
       case 'weather': return <WeatherAnalytics />;
-      case 'alerts': return <AlertSystem />;
+      case 'alerts': return <AlertSystem setActiveNav={setActiveNav} />;
       case 'pest': return <PestDetection />;
       case 'settings': return <Settings language={language} setLanguage={setLanguage} />;
       default: return <Overview setIsChatOpen={setIsChatOpen} />;
@@ -296,7 +342,7 @@ export default function Dashboard({ language, setLanguage }) {
             </button>
             {/* Add Farm Button */}
             <button 
-              onClick={() => setShowAddFarmModal(true)}
+              onClick={handleOpenAddFarm}
               className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-full hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all text-xs font-bold shadow-sm"
             >
               <Plus size={14} className="text-green-600" />
@@ -376,12 +422,17 @@ export default function Dashboard({ language, setLanguage }) {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
-                                <h4 className="text-sm font-bold text-slate-900 group-hover:text-green-600 transition-colors">{alert.title}</h4>
-                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                                  alert.severity === 'High' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                }`}>
-                                  {alert.severity}
-                                </span>
+                                <h4 className="text-sm font-bold text-slate-900 group-hover:text-green-600 transition-colors pr-2">{alert.title}</h4>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
+                                    alert.severity === 'High' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                  }`}>
+                                    {alert.severity}
+                                  </span>
+                                  <button onClick={(e) => { e.stopPropagation(); dismissAlert(alert.id); }} className="text-slate-400 hover:text-red-500 transition-colors">
+                                    <X size={14} />
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{alert.message}</p>
                             </div>
@@ -416,7 +467,7 @@ export default function Dashboard({ language, setLanguage }) {
           {/* Floating Alerts (Left Side - Now Absolute to scroll) */}
           <div className="absolute top-10 left-8 z-[150] flex flex-col gap-3 w-80 pointer-events-none">
             <AnimatePresence>
-              {activeNav === 'overview' && !isScrolled && activeAlerts.map((alert) => (
+              {activeNav === 'overview' && !isScrolled && activeAlerts.slice(0, 3).map((alert) => (
                 <motion.div
                   key={alert.id}
                   initial={{ opacity: 0, x: -50 }}
@@ -507,8 +558,8 @@ export default function Dashboard({ language, setLanguage }) {
       
       {/* Add Farm Modal */}
       <AnimatePresence>
-        {showAddFarmModal && <AddFarmModal isOpen={showAddFarmModal} onClose={() => setShowAddFarmModal(false)} />}
-        {showManageFarmsModal && <ManageFarmsModal isOpen={showManageFarmsModal} onClose={() => setShowManageFarmsModal(false)} onAdd={() => setShowAddFarmModal(true)} />}
+        {showAddFarmModal && <AddFarmModal isOpen={showAddFarmModal} onClose={() => {setShowAddFarmModal(false); setFarmToEdit(null);}} onSave={handleSaveFarm} initialData={farmToEdit} />}
+        {showManageFarmsModal && <ManageFarmsModal isOpen={showManageFarmsModal} onClose={() => setShowManageFarmsModal(false)} onAdd={handleOpenAddFarm} farms={farms} onDelete={handleDeleteFarm} onEdit={handleEditFarm} />}
       </AnimatePresence>
     </div>
   );
