@@ -1,7 +1,7 @@
 import { mlService } from '../services/ml.service.js';
 import { cacheService } from '../services/cache.service.js';
 import crypto from 'crypto';
-import { geminiService } from '../services/gemini.service.js';
+import { aiService } from '../services/ai.service.js';
 
 export const detect = async (req, res, next) => {
   try {
@@ -13,7 +13,7 @@ export const detect = async (req, res, next) => {
 
     const result = await cacheService.getOrSet(cacheKey, async () => {
       const mlResult = await mlService.detectPest(req.file.buffer, req.file.originalname);
-      const reasoning = await geminiService.addReasoning('pest detection', { filename: req.file.originalname }, mlResult);
+      const reasoning = await aiService.addReasoning('pest detection', { filename: req.file.originalname }, mlResult);
       return { prediction: mlResult, reasoning };
     }, cacheService.TTL.PEST);
 

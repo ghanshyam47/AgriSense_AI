@@ -1,11 +1,11 @@
 import { mlService } from '../services/ml.service.js';
 import { weatherService } from '../services/weather.service.js';
-import { geminiService } from '../services/gemini.service.js';
+import { aiService } from '../services/ai.service.js';
 
 export const plan = async (req, res, next) => {
   try {
     const mlResult = await mlService.planIrrigation(req.body);
-    const reasoning = await geminiService.addReasoning('irrigation plan', req.body, mlResult);
+    const reasoning = await aiService.addReasoning('irrigation plan', req.body, mlResult);
     res.json({ success: true, data: { prediction: mlResult, reasoning } });
   } catch (err) { next(err); }
 };
@@ -31,7 +31,7 @@ export const getToday = async (req, res, next) => {
       rainfall_forecast: totalRain,
     });
     
-    const reasoning = await geminiService.addReasoning('irrigation plan for today', { crop, soil_type, totalRain }, mlResult);
+    const reasoning = await aiService.addReasoning('irrigation plan for today', { crop, soil_type, totalRain }, mlResult);
 
     res.json({ success: true, data: { prediction: mlResult, reasoning }, weather });
   } catch (err) { next(err); }
