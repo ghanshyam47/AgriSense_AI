@@ -3,8 +3,8 @@ import FarmProfile from '../models/FarmProfile.js';
 
 export const getProfile = async (req, res, next) => {
   try {
-    const farm = await FarmProfile.findOne({ userId: req.user._id });
-    res.json({ success: true, user: req.user, farm });
+    const farms = await FarmProfile.find({ userId: req.user._id });
+    res.json({ success: true, user: req.user, farms });
   } catch (err) { next(err); }
 };
 
@@ -21,14 +21,34 @@ export const updateProfile = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const createFarm = async (req, res, next) => {
+  try {
+    const { name, farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage } = req.body;
+    const farm = await FarmProfile.create({
+      userId: req.user._id,
+      name: name || 'New Farm',
+      farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage
+    });
+    res.json({ success: true, farm });
+  } catch (err) { next(err); }
+};
+
 export const updateFarmProfile = async (req, res, next) => {
   try {
-    const { farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage } = req.body;
+    const { farmId, name, farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage } = req.body;
     const farm = await FarmProfile.findOneAndUpdate(
-      { userId: req.user._id },
-      { farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage },
-      { new: true, upsert: true }
+      { _id: farmId, userId: req.user._id },
+      { name, farmSize, soilType, currentCrops, waterSource, irrigationType, cropStage },
+      { new: true }
     );
     res.json({ success: true, farm });
+  } catch (err) { next(err); }
+};
+
+export const deleteFarm = async (req, res, next) => {
+  try {
+    const { farmId } = req.params;
+    await FarmProfile.findOneAndDelete({ _id: farmId, userId: req.user._id });
+    res.json({ success: true, message: 'Farm deleted successfully' });
   } catch (err) { next(err); }
 };

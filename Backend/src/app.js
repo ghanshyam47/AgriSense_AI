@@ -20,10 +20,34 @@ import swaggerDocument from "./docs/swagger.js";
 
 const app = express();
 
+// Trust proxy for express-rate-limit (required for ngrok)
+app.set('trust proxy', 1);
+
 // ── Global Middleware ────────────────────────────────
-app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
+const corsOrigin = config.NODE_ENV === 'production'
+  ? config.CORS_ORIGIN
+  : (origin, callback) => {
+      // Allow any localhost port in development (Vite picks 5173/5174/5175 etc.)
+      if (!origin || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all in dev for convenience
+      }
+    };
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── Disable browser caching for API responses ───────
+// This prevents 304 Not Modified on dynamic endpoints (chat, alerts, etc.)
+// Server-side Redis caching still works — this only affects browser HTTP cache.
+app.set("etag", false);
+app.use("/api/", (req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
 app.use("/api/", generalLimiter);
 
 // ── Request Logger ───────────────────────────────────

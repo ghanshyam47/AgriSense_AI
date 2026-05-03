@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Bell, Map, Shield, Smartphone, Globe, CreditCard, ChevronRight, Save, Check, ChevronDown, Plus, Trash2, Edit3, X, Droplets, Leaf, Phone, Mail, MapPin } from 'lucide-react';
+import { User, Bell, Map, Shield, Smartphone, Globe, CreditCard, ChevronRight, Save, Check, ChevronDown, Plus, Trash2, Edit3, X, Droplets, Leaf, Phone, Mail, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { translations, LANGUAGES } from '../../services/translations';
+import { getProfile, updateProfile as apiUpdateProfile, updateFarmProfile as apiUpdateFarmProfile } from '../../services/apiClient';
 
 const CustomDropdown = ({ label, value, options, onChange, isLanguage = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,41 +42,102 @@ const EMPTY_FARM = { name: '', area: '', soilType: 'Loamy', moisture: 45, nitrog
 export default function Settings({ language, setLanguage }) {
   const t = translations[language] || translations.en;
   const [profile, setProfile] = useState({
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@agrisense.in',
-    phone: '+91 98765 43210',
-    address: 'Village Kharar, Tehsil Kharar',
-    district: 'Ludhiana',
-    state: 'Punjab',
-    pincode: '141401'
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    district: '',
+    state: '',
+    pincode: ''
   });
 
-  const [farms, setFarms] = useState([
-    { id: 1, name: 'Green Valley Meadows', area: '45', soilType: 'Loamy', moisture: 58, nitrogen: 45, phosphorus: 30, potassium: 35 },
-    { id: 2, name: 'Sunrise Paddy Fields', area: '22', soilType: 'Clay', moisture: 72, nitrogen: 38, phosphorus: 22, potassium: 28 },
-  ]);
+  const [farms, setFarms] = useState([]);
 
   const [notifications, setNotifications] = useState({ weather: true, market: true, pests: true, irrigation: false });
   const [showFarmModal, setShowFarmModal] = useState(false);
   const [editingFarm, setEditingFarm] = useState(null);
   const [farmForm, setFarmForm] = useState({ ...EMPTY_FARM });
   const [activeTab, setActiveTab] = useState('profile');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load profile from backend on mount
+  useEffect(() => {
+    let mounted = true;
+    getProfile()
+      .then((res) => {
+        if (!mounted) return;
+        if (res?.user) {
+          setProfile(prev => ({
+            ...prev,
+            name: res.user.name || prev.name,
+            email: res.user.email || prev.email,
+            phone: res.user.phone || prev.phone,
+            address: res.user.location?.address || prev.address,
+            district: res.user.location?.district || prev.district,
+            state: res.user.location?.state || prev.state,
+            pincode: res.user.location?.pincode || prev.pincode,
+          }));
+        }
+        if (res?.farm) {
+          setFarms([{
+            id: res.farm._id || 1,
+            name: res.farm.farmName || 'My Farm',
+            area: res.farm.farmSize || '',
+            soilType: res.farm.soilType || 'Loamy',
+            moisture: 50,
+            nitrogen: 40,
+            phosphorus: 25,
+            potassium: 30,
+          }]);
+        }
+      })
+      .catch(() => { /* profile load failed — use defaults */ });
+    return () => { mounted = false; };
+  }, []);
 
   const openAddFarm = () => { setEditingFarm(null); setFarmForm({ ...EMPTY_FARM }); setShowFarmModal(true); };
   const openEditFarm = (farm) => { setEditingFarm(farm.id); setFarmForm({ ...farm }); setShowFarmModal(true); };
   const deleteFarm = (id) => setFarms(prev => prev.filter(f => f.id !== id));
 
-  const saveFarm = (e) => {
+  const saveFarm = async (e) => {
     e.preventDefault();
     if (editingFarm) {
       setFarms(prev => prev.map(f => f.id === editingFarm ? { ...farmForm, id: editingFarm } : f));
     } else {
       setFarms(prev => [...prev, { ...farmForm, id: Date.now() }]);
     }
+    // Also persist to backend
+    try {
+      await apiUpdateFarmProfile({
+        farmSize: farmForm.area,
+        soilType: farmForm.soilType,
+        currentCrops: [],
+      });
+    } catch { /* ignore */ }
     setShowFarmModal(false);
   };
 
   const updateProfile = (key, val) => setProfile(prev => ({ ...prev, [key]: val }));
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await apiUpdateProfile({
+        name: profile.name,
+        language,
+        location: {
+          address: profile.address,
+          district: profile.district,
+          state: profile.state,
+          pincode: profile.pincode,
+        },
+      });
+    } catch (err) {
+      console.error('Profile save failed', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const getNPKColor = (val) => val > 40 ? 'text-green-400' : val > 20 ? 'text-amber-400' : 'text-red-400';
   const getNPKBg = (val) => val > 40 ? 'bg-green-500/10' : val > 20 ? 'bg-amber-500/10' : 'bg-red-500/10';
@@ -189,8 +251,8 @@ export default function Settings({ language, setLanguage }) {
             </div>
           </div>
           <div className="pt-6 border-t border-slate-100 flex justify-end">
-            <button className="bg-green-600 text-white px-12 py-4 rounded-[1.2rem] font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-all shadow-xl shadow-green-200 flex items-center gap-3 group">
-              <Save size={18} className="group-hover:scale-110 transition-transform" /> {t.saveProfile}
+            <button onClick={handleSaveProfile} disabled={isSaving} className="bg-green-600 text-white px-12 py-4 rounded-[1.2rem] font-black text-xs uppercase tracking-widest hover:bg-green-700 transition-all shadow-xl shadow-green-200 flex items-center gap-3 group disabled:opacity-60">
+              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} className="group-hover:scale-110 transition-transform" />} {t.saveProfile}
             </button>
           </div>
         </div>

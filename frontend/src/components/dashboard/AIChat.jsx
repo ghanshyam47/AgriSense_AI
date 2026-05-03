@@ -5,13 +5,14 @@ import {
   Camera, FileText, MapPin, Zap, Activity, Cpu,
   TrendingUp
 } from 'lucide-react';
+import { sendChatMessage, getChatHistory, clearChatHistory } from '../../services/apiClient';
 
 export default function AIChat({ isOpen, onClose }) {
   const [messages, setMessages] = useState([
     { 
       id: 1, 
       type: 'ai', 
-      text: "Neural Link established. I am your AgriSense Intelligence Agent. I have analyzed your current Neural Node telemetry. How shall we optimize your farm operations today?",
+      text: "Neural Link established. I am your AgriSense Intelligence Agent. How shall we optimize your farm operations today?",
       time: 'Sync: Active'
     }
   ]);
@@ -27,6 +28,24 @@ export default function AIChat({ isOpen, onClose }) {
     }
   }, [messages, isTyping]);
 
+  // Load conversation history from backend
+  useEffect(() => {
+    if (!isOpen) return;
+    getChatHistory()
+      .then((res) => {
+        if (res?.data && res.data.length > 0) {
+          const historyMsgs = res.data.map((m, i) => ({
+            id: `hist-${i}`,
+            type: m.role === 'assistant' ? 'ai' : 'user',
+            text: m.content,
+            time: m.role === 'assistant' ? 'ML Processed' : '',
+          }));
+          setMessages(prev => [prev[0], ...historyMsgs]);
+        }
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
   useEffect(() => {
     // Initialize Speech Recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -34,7 +53,6 @@ export default function AIChat({ isOpen, onClose }) {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      // Defaulting to Hindi, you can change this dynamically based on user preferences: e.g., 'hi-IN', 'en-US', 'ta-IN'
       recognitionRef.current.lang = 'hi-IN';
 
       recognitionRef.current.onstart = () => {
@@ -70,7 +88,7 @@ export default function AIChat({ isOpen, onClose }) {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     const userMsg = {
@@ -81,28 +99,31 @@ export default function AIChat({ isOpen, onClose }) {
     };
 
     setMessages(prev => [...prev, userMsg]);
+    const messageToSend = inputValue;
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate Agent processing
-    setTimeout(() => {
-      setIsTyping(false);
+    try {
+      const res = await sendChatMessage({ message: messageToSend });
       const aiMsg = {
         id: Date.now() + 1,
         type: 'ai',
-        text: getAgentResponse(inputValue),
+        text: res?.data?.response || "I processed your request, but there was an error extracting the data.",
         time: 'ML Processed'
       };
       setMessages(prev => [...prev, aiMsg]);
-    }, 1200);
-  };
-
-  const getAgentResponse = (query) => {
-    const q = query.toLowerCase();
-    if (q.includes('weather') || q.includes('climate')) return "Neural models indicate a high-pressure system moving in. ML predictions suggest 84% probability of localized precipitation. Optimizing irrigation vectors now.";
-    if (q.includes('pest') || q.includes('risk')) return "Neural analysis of high-humidity nodes indicates an elevated risk of pathogen spread. I recommend deploying an autonomous drone for multi-spectral imaging.";
-    if (q.includes('price') || q.includes('yield')) return "Predictive algorithms suggest a 12% yield increase across North Nodes. MSP-delta is currently optimal for high-volume transactions.";
-    return "Query received. Accessing global agricultural datasets and local node telemetry. My neural models suggest focusing on hydration optimization in Sector 4.";
+    } catch (err) {
+      console.error("Failed to send message", err);
+      const errorMsg = {
+        id: Date.now() + 1,
+        type: 'ai',
+        text: "Error communicating with the neural engine.",
+        time: 'Error'
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -128,6 +149,16 @@ export default function AIChat({ isOpen, onClose }) {
           className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-300 hover:text-red-500"
         >
           <X size={24} />
+        </button>
+        <button
+          onClick={async () => {
+            try { await clearChatHistory(); } catch {}
+            setMessages([{ id: 1, type: 'ai', text: 'History cleared. How can I help?', time: 'Sync: Active' }]);
+          }}
+          title="Clear History"
+          className="p-3 hover:bg-red-50 rounded-2xl transition-colors text-slate-300 hover:text-red-500"
+        >
+          <X size={18} />
         </button>
       </div>
 

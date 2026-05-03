@@ -1,25 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Info, Table as TableIcon, LayoutGrid, ChevronDown, Search } from 'lucide-react';
 import { 
   ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, 
   CartesianGrid, Tooltip, Legend 
 } from 'recharts';
-import { MOCK_MARKET_DATA, CROPS_LIST } from '../../services/mockData';
+import { CROPS_LIST } from '../../services/constants';
+import { getMarketTrend, getMarketAdvice } from '../../services/apiClient';
 
 export default function MarketMSP() {
   const [selectedCrop, setSelectedCrop] = useState(CROPS_LIST[0]);
   const [viewMode, setViewMode] = useState('chart'); 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const [marketData, setMarketData] = useState([]);
+  const [advice, setAdvice] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const cropName = selectedCrop.name.toLowerCase();
+        const [trendRes, adviceRes] = await Promise.all([
+          getMarketTrend(cropName),
+          getMarketAdvice(cropName)
+        ]);
+
+        if (!isMounted) return;
+
+        if (trendRes && trendRes.data) {
+           // map trend data { date, price } to chart format
+           const mspVal = adviceRes?.data?.msp || 2000;
+           const mappedTrend = trendRes.data.data.map(d => ({
+             name: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+             price: d.price,
+             msp: mspVal
+           }));
+           setMarketData(mappedTrend);
+        }
+
+        if (adviceRes && adviceRes.data) {
+          setAdvice(adviceRes.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch market data", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchData();
+    return () => { isMounted = false; };
+  }, [selectedCrop]);
 
   const filteredCrops = CROPS_LIST.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const currentPrice = MOCK_MARKET_DATA[MOCK_MARKET_DATA.length - 1][selectedCrop.id];
-  const mspPrice = MOCK_MARKET_DATA[MOCK_MARKET_DATA.length - 1][selectedCrop.mspKey];
-  const diff = ((currentPrice - mspPrice) / mspPrice * 100).toFixed(1);
+  const currentPrice = advice?.avg_market_price || 0;
+  const mspPrice = advice?.msp || 0;
+  const diff = advice?.difference_percent || 0;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -29,7 +71,6 @@ export default function MarketMSP() {
           <p className="text-sm text-slate-500">Compare real-time market prices against Government MSP.</p>
         </div>
         
-        {/* Premium Dropdown */}
         <div className="relative w-full md:w-64">
           <button 
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -111,7 +152,7 @@ export default function MarketMSP() {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Profit Gap</p>
-            <p className={`text-2xl font-bold ${Number(diff) > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{diff}% Above MSP</p>
+            <p className={`text-2xl font-bold ${Number(diff) > 0 ? 'text-emerald-600' : 'text-red-600'}`}>{diff}% {Number(diff) > 0 ? 'Above' : 'Below'} MSP</p>
           </div>
         </div>
       </div>
@@ -136,10 +177,12 @@ export default function MarketMSP() {
         </div>
 
         <div className="p-6">
-          {viewMode === 'chart' ? (
+          {isLoading ? (
+            <div className="h-80 flex items-center justify-center text-slate-400 font-medium">Loading data...</div>
+          ) : viewMode === 'chart' ? (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={MOCK_MARKET_DATA}>
+                <ComposedChart data={marketData}>
                   <defs>
                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={selectedCrop.color} stopOpacity={0.4} />
@@ -155,8 +198,8 @@ export default function MarketMSP() {
                     cursor={{ stroke: '#e2e8f0', strokeWidth: 1.5, strokeDasharray: '4 4' }}
                   />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '16px', fontWeight: 500, color: '#64748b' }} />
-                  <Area type="monotone" name={`${selectedCrop.name} Market Price`} dataKey={selectedCrop.id} stroke={selectedCrop.color} strokeWidth={3} fill="url(#colorPrice)" dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, fill: selectedCrop.color }} />
-                  <Line type="monotone" name={`Govt. MSP (${selectedCrop.name})`} dataKey={selectedCrop.mspKey} stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
+                  <Area type="monotone" name={`${selectedCrop.name} Market Price`} dataKey="price" stroke={selectedCrop.color} strokeWidth={3} fill="url(#colorPrice)" dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, fill: selectedCrop.color }} />
+                  <Line type="monotone" name={`Govt. MSP (${selectedCrop.name})`} dataKey="msp" stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -165,7 +208,7 @@ export default function MarketMSP() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Month</th>
+                    <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Date</th>
                     <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Market Price</th>
                     <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">MSP</th>
                     <th className="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Difference</th>
@@ -173,10 +216,10 @@ export default function MarketMSP() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {MOCK_MARKET_DATA.map((data, i) => {
-                    const price = data[selectedCrop.id];
-                    const msp = data[selectedCrop.mspKey];
-                    const diffValue = (((price - msp) / msp) * 100).toFixed(1);
+                  {marketData.map((data, i) => {
+                    const price = data.price;
+                    const msp = data.msp;
+                    const diffValue = msp > 0 ? (((price - msp) / msp) * 100).toFixed(1) : 0;
                     return (
                       <tr key={i} className="hover:bg-slate-50 transition-colors">
                         <td className="py-4 text-sm font-bold text-slate-900">{data.name}</td>
