@@ -1,12 +1,62 @@
-import React, { useState } from 'react';
-import { Droplets, CloudRain, Clock, Power, CheckCircle2, AlertCircle, TrendingDown, Bookmark, ChevronDown } from 'lucide-react';
-import { IRRIGATION_DATA, CROPS_LIST } from '../../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { Droplets, CloudRain, Clock, Power, CheckCircle2, AlertCircle, TrendingDown, Bookmark, ChevronDown, Sparkles } from 'lucide-react';
+import { CROPS_LIST } from '../../services/constants';
+import { getIrrigationToday } from '../../services/apiClient';
 
 export default function IrrigationManager({ bookmarks, toggleBookmark }) {
   const [selectedCrop, setSelectedCrop] = useState(CROPS_LIST[0]);
-  const schedules = IRRIGATION_DATA[selectedCrop.id] || [];
+  const [schedules, setSchedules] = useState([]);
+  const [reasoning, setReasoning] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const isBookmarked = bookmarks.includes(selectedCrop.id);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchIrrigation = async () => {
+      setIsLoading(true);
+      try {
+        // India center coords (fallback when no farm location is set)
+        const lat = 20.5937, lng = 78.9629; 
+        const res = await getIrrigationToday(lat, lng, selectedCrop.name);
+        
+        if (!isMounted) return;
+
+        if (res && res.data && res.data.prediction) {
+          const mlResponse = res.data.prediction;
+          const planData = mlResponse.plan;
+          
+          setReasoning(res.data.reasoning || planData?.advice || '');
+          
+          if (planData && planData.daily_plan && planData.daily_plan.length > 0) {
+            const todayPlan = planData.daily_plan[0];
+            
+            if (todayPlan.should_irrigate) {
+              setSchedules([
+                { id: 1, zone: 'Zone A (North)', time: '06:00 AM', waterAmount: `${todayPlan.water_need_mm}mm`, duration: '45 mins', status: 'Pending' },
+                { id: 2, zone: 'Zone B (South)', time: '07:00 AM', waterAmount: `${todayPlan.water_need_mm}mm`, duration: '45 mins', status: 'Pending' }
+              ]);
+            } else {
+              setSchedules([
+                { id: 1, zone: 'All Zones', time: 'N/A', waterAmount: '0mm', duration: '0 mins', status: 'Completed (No water needed)' }
+              ]);
+            }
+          } else {
+            setSchedules([
+              { id: 1, zone: 'All Zones', time: 'N/A', waterAmount: '0mm', duration: '0 mins', status: 'Completed (No water needed)' }
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch irrigation data", err);
+        if (isMounted) setSchedules([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchIrrigation();
+    return () => { isMounted = false; };
+  }, [selectedCrop]);
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -56,19 +106,35 @@ export default function IrrigationManager({ bookmarks, toggleBookmark }) {
         {/* Active Schedule */}
         <div className="lg:col-span-8 space-y-4">
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-blue-50/50">
+              <div className="flex items-center gap-2 text-blue-700 font-bold">
+                <Sparkles size={18} />
+                <h3>AI Recommendation</h3>
+              </div>
+            </div>
+            <div className="p-6">
+               <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                 {isLoading ? 'Analyzing weather and soil conditions...' : (reasoning || 'No immediate irrigation required based on current conditions.')}
+               </p>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-bold text-slate-900">{selectedCrop.name} Watering Schedule</h3>
               <button className="text-xs font-bold text-blue-600 hover:underline">+ New Zone</button>
             </div>
             <div className="divide-y divide-slate-50">
-              {schedules.length > 0 ? (
+              {isLoading ? (
+                <div className="p-12 text-center text-slate-400 font-medium">Loading schedule...</div>
+              ) : schedules.length > 0 ? (
                 schedules.map((item) => (
                   <div key={item.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors group">
                     <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.status === 'Completed' ? 'bg-green-100' :
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.status.includes('Completed') ? 'bg-green-100' :
                         item.status.includes('Delayed') ? 'bg-amber-100' : 'bg-blue-100'
                         }`}>
-                        {item.status === 'Completed' ? <CheckCircle2 className="text-green-600" size={20} /> :
+                        {item.status.includes('Completed') ? <CheckCircle2 className="text-green-600" size={20} /> :
                           item.status.includes('Delayed') ? <AlertCircle className="text-amber-600" size={20} /> : <Clock className="text-blue-600" size={20} />}
                       </div>
                       <div>
@@ -82,7 +148,7 @@ export default function IrrigationManager({ bookmarks, toggleBookmark }) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.status.includes('Completed') ? 'bg-green-100 text-green-700' :
                         item.status.includes('Delayed') ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-blue-100 text-blue-700'
                         }`}>
                         {item.status}

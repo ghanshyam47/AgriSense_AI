@@ -1,12 +1,65 @@
-import React, { useState } from 'react';
-import { Zap, AlertTriangle, Bug, CloudRain, TrendingUp, Info, ChevronRight, Search, Filter } from 'lucide-react';
-import { SMART_ALERTS } from '../../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { Zap, AlertTriangle, Bug, CloudRain, TrendingUp, Info, ChevronRight, Search, Filter, Loader2 } from 'lucide-react';
+import { getAlerts, getAgriAlerts, markAlertRead, deleteAlert as apiDeleteAlert } from '../../services/apiClient';
 
 export default function AlertSystem() {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [alerts, setAlerts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredAlerts = SMART_ALERTS.filter(alert => {
+  useEffect(() => {
+    let mounted = true;
+    const fetchAlerts = async () => {
+      setIsLoading(true);
+      try {
+        // Try fetching from backend alerts endpoint first
+        const res = await getAlerts(null, 50);
+        if (mounted && res?.data && res.data.length > 0) {
+          const mapped = res.data.map(a => ({
+            id: a._id || a.id,
+            title: a.title,
+            message: a.message || a.actionable || '',
+            type: a.type === 'pest' ? 'pest-weather' : a.type === 'weather' ? 'weather-irrigation' : 'market-trend',
+            severity: a.severity === 'critical' ? 'High' : a.severity === 'high' ? 'High' : 'Medium',
+            action: 'View Details',
+          }));
+          setAlerts(mapped);
+        } else {
+          // Fallback: fetch weather-based agri alerts
+          const agriRes = await getAgriAlerts(20.5937, 78.9629);
+          if (mounted && agriRes?.data && agriRes.data.length > 0) {
+            const mapped = agriRes.data.map((a, i) => ({
+              id: a.id || `agri-${i}`,
+              title: a.title,
+              message: a.message + (a.actionable ? ` → ${a.actionable}` : ''),
+              type: a.type === 'pest' ? 'pest-weather' : 'weather-irrigation',
+              severity: a.severity === 'critical' || a.severity === 'high' ? 'High' : 'Medium',
+              action: 'View Details',
+            }));
+            setAlerts(mapped);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch alerts", err);
+        // Use empty
+        setAlerts([]);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    fetchAlerts();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleDismiss = async (id) => {
+    try {
+      await apiDeleteAlert(id);
+    } catch { /* ignore */ }
+    setAlerts(prev => prev.filter(a => a.id !== id));
+  };
+
+  const filteredAlerts = alerts.filter(alert => {
     const matchesFilter = filter === 'All' || alert.severity === filter;
     const matchesSearch = alert.title.toLowerCase().includes(search.toLowerCase()) || 
                           alert.message.toLowerCase().includes(search.toLowerCase());
@@ -47,6 +100,11 @@ export default function AlertSystem() {
         </div>
       </div>
 
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={32} className="animate-spin text-green-600" />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAlerts.length > 0 ? (
           filteredAlerts.map((alert) => (
@@ -96,6 +154,7 @@ export default function AlertSystem() {
           </div>
         )}
       </div>
+      )}
 
       {/* Analytics Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -18,7 +18,7 @@ import CropRecommendation from '../components/dashboard/CropRecommendation';
 import WeatherAnalytics from '../components/dashboard/WeatherAnalytics';
 import AIChat from '../components/dashboard/AIChat';
 import { translations, LANGUAGES } from '../services/translations';
-import { SMART_ALERTS } from '../services/mockData';
+import { getAlerts, getUnreadAlertCount, updateFarmProfile } from '../services/apiClient';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'dashboard', id: 'overview' },
@@ -189,7 +189,8 @@ export default function Dashboard({ language, setLanguage }) {
   const navigate = useNavigate();
   const t = translations[language] || translations.en;
   const [activeNav, setActiveNav] = useState('overview');
-  const [activeAlerts, setActiveAlerts] = useState(SMART_ALERTS);
+  const [activeAlerts, setActiveAlerts] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [bookmarks, setBookmarks] = useState(['Wheat']); 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -211,6 +212,35 @@ export default function Dashboard({ language, setLanguage }) {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch live alerts & unread count
+  useEffect(() => {
+    let mounted = true;
+    const loadAlerts = async () => {
+      try {
+        const [alertsRes, unreadRes] = await Promise.allSettled([
+          getAlerts(null, 10),
+          getUnreadAlertCount()
+        ]);
+        if (!mounted) return;
+        if (alertsRes.status === 'fulfilled' && alertsRes.value?.data) {
+          const mapped = alertsRes.value.data.slice(0, 5).map(a => ({
+            id: a._id || a.id || Math.random(),
+            title: a.title,
+            message: a.message || '',
+            type: a.type === 'pest' ? 'pest-weather' : a.type === 'weather' ? 'weather-irrigation' : 'market-trend',
+            severity: a.severity === 'critical' || a.severity === 'high' ? 'High' : 'Medium'
+          }));
+          setActiveAlerts(mapped);
+        }
+        if (unreadRes.status === 'fulfilled') {
+          setUnreadCount(unreadRes.value?.unread || 0);
+        }
+      } catch { /* ignore */ }
+    };
+    loadAlerts();
+    return () => { mounted = false; };
   }, []);
 
   const handleScroll = (e) => {
@@ -286,22 +316,6 @@ export default function Dashboard({ language, setLanguage }) {
           </div>
           
           <div className="flex items-center space-x-3 md:space-x-4">
-            {/* Manage Farms Button */}
-            <button 
-              onClick={() => setShowManageFarmsModal(true)}
-              className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-full hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all text-xs font-bold shadow-sm"
-            >
-              <List size={14} className="text-blue-600" />
-              <span>My Farms</span>
-            </button>
-            {/* Add Farm Button */}
-            <button 
-              onClick={() => setShowAddFarmModal(true)}
-              className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-full hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all text-xs font-bold shadow-sm"
-            >
-              <Plus size={14} className="text-green-600" />
-              <span>Add</span>
-            </button>
             {/* Language Selector */}
             <div className="relative" ref={languageRef}>
               <button 
@@ -346,7 +360,7 @@ export default function Dashboard({ language, setLanguage }) {
                   className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-green-600 text-white' : 'hover:bg-slate-100 text-slate-700'}`}
                 >
                   <Bell size={20} />
-                  {!showNotifications && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>}
+                  {!showNotifications && unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>}
                 </button>
 
                 {/* Notification Dropdown */}
@@ -358,7 +372,7 @@ export default function Dashboard({ language, setLanguage }) {
                         <h3 className="font-bold text-slate-900">Notifications</h3>
                       </div>
                       <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                        {activeAlerts.length} New
+                        {unreadCount || activeAlerts.length} New
                       </span>
                     </div>
                     

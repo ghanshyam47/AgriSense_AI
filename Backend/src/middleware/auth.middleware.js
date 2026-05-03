@@ -14,18 +14,17 @@ const syncUser = async (req, res, next) => {
     let user = await User.findOne({ clerkId: req.auth.userId });
     
     if (!user) {
-      // Fetch user details from Clerk
+      // Fetch user details from Clerk and upsert to avoid race-condition duplicates
       const clerkUser = await clerkClient.users.getUser(req.auth.userId);
       const email = clerkUser.emailAddresses[0]?.emailAddress;
       const phone = clerkUser.phoneNumbers[0]?.phoneNumber;
       const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'New User';
 
-      user = await User.create({
-        clerkId: clerkUser.id,
-        name,
-        email,
-        phone,
-      });
+      user = await User.findOneAndUpdate(
+        { clerkId: clerkUser.id },
+        { $setOnInsert: { clerkId: clerkUser.id, name, email, phone } },
+        { new: true, upsert: true }
+      );
     }
 
     req.user = user;

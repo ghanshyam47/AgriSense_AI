@@ -4,6 +4,7 @@ import {
   Sprout, Droplets, Map, Landmark, Zap, ChevronRight, ChevronLeft, CheckCircle2,
   Globe, RotateCcw, TrendingUp, DollarSign
 } from 'lucide-react';
+import { recommendCrop } from '../../services/apiClient';
 
 const QUESTIONS = [
   {
@@ -84,12 +85,64 @@ export default function CropRecommendation() {
     }
   };
 
-  const startAnalysis = (finalAnswers) => {
+  const mapAnswersToPayload = (ans) => {
+    let soil_condition = 'normal';
+    let season = 'kharif';
+    let temperature = 28;
+    let humidity = 60;
+    let rainfall = 100;
+
+    if (ans.soil === 'Soft & Crumbly') soil_condition = 'normal';
+    if (ans.soil === 'Black & Sticky') soil_condition = 'wet';
+    if (ans.soil === 'Sandy / Red') soil_condition = 'dry';
+    if (ans.soil === 'Heavy Clay') soil_condition = 'wet';
+
+    if (ans.region === 'North India') { temperature = 24; rainfall = 80; }
+    if (ans.region === 'South India') { temperature = 32; rainfall = 120; }
+    if (ans.region === 'West India') { temperature = 35; rainfall = 40; season = 'rabi'; }
+    if (ans.region === 'East India') { temperature = 29; rainfall = 200; season = 'kharif'; }
+    if (ans.region === 'Central India') { temperature = 30; rainfall = 100; season = 'kharif'; }
+
+    return { soil_condition, season, temperature, humidity, rainfall };
+  };
+
+  const startAnalysis = async (finalAnswers) => {
     setIsAnalyzing(true);
-    setTimeout(() => {
-      setIsAnalyzing(false);
+    try {
+      const payload = mapAnswersToPayload(finalAnswers);
+      const result = await recommendCrop(payload);
+      
+      if (result && result.data && result.data.prediction && result.data.prediction.recommendations) {
+        const recs = result.data.prediction.recommendations;
+        const top = recs[0];
+        
+        setRecommendation({
+          crop: top.crop.charAt(0).toUpperCase() + top.crop.slice(1),
+          confidence: top.confidence,
+          reason: result.data.reasoning || `Based on your ${finalAnswers.soil} soil and region, ${top.crop} is a great choice.`,
+          tasks: ['Prepare the field', 'Purchase high-quality seeds', 'Set up irrigation plan'],
+          profitPotential: top.msp_per_quintal > 0 ? 'High' : 'Moderate',
+          marketPrice: top.msp_per_quintal > 0 ? `₹${top.msp_per_quintal} (MSP)` : 'Market Dependent',
+          duration: top.duration,
+          season: top.season,
+          water: top.water_requirement,
+          alternatives: recs.slice(1).map(r => ({
+            crop: r.crop.charAt(0).toUpperCase() + r.crop.slice(1),
+            confidence: r.confidence,
+            msp: r.msp_per_quintal,
+            duration: r.duration,
+            water: r.water_requirement
+          }))
+        });
+      } else {
+        throw new Error('Invalid response');
+      }
+    } catch (err) {
+      console.error("API error, falling back to local logic:", err);
       generateRecommendation(finalAnswers);
-    }, 4000);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const generateRecommendation = (ans) => {
@@ -287,22 +340,44 @@ export default function CropRecommendation() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 shadow-sm">
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Climate</p>
-                  <p className="text-sm font-black text-slate-700">Match Ready</p>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Duration</p>
+                  <p className="text-sm font-black text-slate-700">{recommendation.duration || 'N/A'}</p>
                 </div>
                 <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
-                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Soil</p>
-                  <p className="text-sm font-black text-slate-700 text-truncate">{answers.soil || 'Analyzing'}</p>
+                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Water Need</p>
+                  <p className="text-sm font-black text-slate-700">{recommendation.water || 'N/A'}</p>
                 </div>
                 <div className="bg-purple-50 p-5 rounded-2xl border border-purple-100 shadow-sm">
-                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Rotation</p>
-                  <p className="text-sm font-black text-slate-700">Post-Harvest</p>
+                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Season</p>
+                  <p className="text-sm font-black text-slate-700">{recommendation.season || 'N/A'}</p>
                 </div>
                 <div className="bg-green-50 p-5 rounded-2xl border border-green-100 shadow-sm">
-                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Investment</p>
-                  <p className="text-sm font-black text-slate-700">Strategic Tier</p>
+                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Soil</p>
+                  <p className="text-sm font-black text-slate-700 text-truncate">{answers.soil || 'Analyzing'}</p>
                 </div>
               </div>
+
+              {recommendation.alternatives && recommendation.alternatives.length > 0 && (
+                <div className="space-y-4 pt-6">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                    <Sprout size={14} className="text-green-500" /> Alternative Options
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {recommendation.alternatives.map((alt, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-green-600 hover:shadow-md transition-all flex justify-between items-center group">
+                        <div>
+                          <h5 className="text-lg font-black text-slate-900 group-hover:text-green-600 transition-colors">{alt.crop}</h5>
+                          <p className="text-xs font-medium text-slate-500 mt-1">{alt.duration} • {alt.water} Water</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Match</p>
+                          <p className="text-lg font-black text-blue-600">{alt.confidence}%</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <button className="w-full py-4 rounded-2xl bg-green-600 text-white font-black text-sm hover:bg-green-500 transition-all shadow-lg flex items-center justify-center gap-4 group">
                 Generate Full Agronomic Report <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />

@@ -20,13 +20,10 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          soil_condition: { type: 'string', description: 'Soil condition: dry, wet, normal, sandy, clay, loamy, red, black' },
-          season: { type: 'string', description: 'Current season: kharif, rabi, zaid, summer, winter, monsoon, rainy' },
-          temperature: { type: 'number', description: 'Temperature in Celsius if known' },
-          humidity: { type: 'number', description: 'Humidity percentage if known' },
-          rainfall: { type: 'number', description: 'Expected rainfall in mm if known' },
+          soil_condition: { type: 'string', description: 'Soil: dry, wet, normal, sandy, clay, red, black' },
+          season: { type: 'string', description: 'Season: kharif, rabi, zaid, monsoon' },
         },
-        required: ['soil_condition', 'season'],
+        required: [],
       },
     },
   },
@@ -134,19 +131,24 @@ You have access to these tools:
 - compareMSP: Compare with government MSP
 - detectPestFromDescription: Identify diseases from symptoms
 
-ALWAYS call relevant tools before giving advice. Never guess when you can look up data.`;
+ALWAYS call a tool before giving advice. If you do not know the soil or season, assume "normal" and "kharif".
+Keep your responses extremely short for voice calls (1-2 sentences).`;
 
 // ── Tool execution functions ────────────────────────
 const toolExecutors = {
   async getCropRecommendation(args) {
     try {
-      const result = await mlService.predictCrop({
-        soil_condition: args.soil_condition,
-        season: args.season,
-        temperature: args.temperature,
-        humidity: args.humidity,
-        rainfall: args.rainfall,
-      });
+      // Small models sometimes send string "undefined" or garbage args, clean them up
+      const clean = (val, fallback) => (val && val !== 'undefined') ? val : fallback;
+      
+      const payload = {
+        soil_condition: clean(args.soil_condition, 'normal'),
+        season: clean(args.season, 'kharif'),
+        temperature: clean(args.temperature, undefined),
+        humidity: clean(args.humidity, undefined),
+        rainfall: clean(args.rainfall, undefined),
+      };
+      const result = await mlService.predictCrop(payload);
       return result;
     } catch (err) {
       logger.error(`Tool getCropRecommendation failed: ${err.message}`);
@@ -156,7 +158,9 @@ const toolExecutors = {
 
   async getWeatherForecast(args) {
     try {
-      return await weatherService.getForecast(args.lat, args.lng);
+      const lat = args.lat !== 'undefined' ? args.lat : undefined;
+      const lng = args.lng !== 'undefined' ? args.lng : undefined;
+      return await weatherService.getForecast(lat, lng);
     } catch (err) {
       return { error: err.message };
     }
@@ -244,12 +248,25 @@ export const processMessage = async (message, context = {}) => {
   messages.push({ role: 'user', content: enrichedMessage });
 
   try {
-    // Step 1: Call Ollama with tools
-    const response = await ollama.chat({
-      model,
-      messages,
-      tools,
-    });
+    // Step 1: Call Ollama with tools (if supported)
+    let response;
+    try {
+      response = await ollama.chat({
+        model,
+        messages,
+        tools,
+      });
+    } catch (err) {
+      if (err.message.includes('does not support tools')) {
+        logger.warn(`Model ${model} does not support tools. Retrying without tools.`);
+        response = await ollama.chat({
+          model,
+          messages,
+        });
+      } else {
+        throw err;
+      }
+    }
 
     // Step 2: Check if Ollama wants to call functions
     if (response.message.tool_calls && response.message.tool_calls.length > 0) {

@@ -8,6 +8,7 @@ import AboutUs from './pages/AboutUs';
 import Solutions from './pages/Solutions';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ApiProvider from './components/ApiProvider';
 
 export default function App() {
   const [language, setLanguage] = useState('en');
@@ -32,7 +33,9 @@ export default function App() {
           element={
             <>
               <SignedIn>
-                <Dashboard language={language} setLanguage={setLanguage} />
+                <ApiProvider>
+                  <Dashboard language={language} setLanguage={setLanguage} />
+                </ApiProvider>
               </SignedIn>
               <SignedOut>
                 <Navigate to="/login" replace />

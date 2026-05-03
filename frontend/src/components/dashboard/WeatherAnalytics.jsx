@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line, Legend } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WEATHER_HISTORY } from '../../services/mockData';
+import { getForecast, getCurrentWeather } from '../../services/apiClient';
 
 const REGIONAL_STATIONS = {
   'Punjab': ['Majha', 'Doaba', 'Malwa', 'Puar'],
@@ -15,6 +15,18 @@ const REGIONAL_STATIONS = {
   'Madhya Pradesh': ['Malwa', 'Nimar', 'Bundelkhand', 'Baghelkhand', 'Mahakoshal'],
   'Uttar Pradesh': ['Western UP', 'Central UP', 'Eastern UP', 'Bundelkhand'],
   'Gujarat': ['Saurashtra', 'Kutch', 'North Gujarat', 'South Gujarat']
+};
+
+const getStateCoords = (state) => {
+  const coords = {
+    'Punjab': { lat: 31.1471, lng: 75.3412 },
+    'Maharashtra': { lat: 19.7515, lng: 75.7139 },
+    'Karnataka': { lat: 15.3173, lng: 75.7139 },
+    'Madhya Pradesh': { lat: 22.9734, lng: 78.6569 },
+    'Uttar Pradesh': { lat: 26.8467, lng: 80.9462 },
+    'Gujarat': { lat: 22.2587, lng: 71.1924 }
+  };
+  return coords[state] || { lat: 20.5937, lng: 78.9629 };
 };
 
 const CustomDropdown = ({ label, value, options, onChange, icon: Icon }) => {
@@ -75,28 +87,52 @@ const CustomDropdown = ({ label, value, options, onChange, icon: Icon }) => {
 };
 
 export default function WeatherAnalytics() {
-  const [timeFilter, setTimeFilter] = useState('weeks'); 
+  const [timeFilter, setTimeFilter] = useState('days'); 
   const [chartType, setChartType] = useState('area');
   const [selectedState, setSelectedState] = useState('Punjab');
   const [selectedRegion, setSelectedRegion] = useState('Malwa');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [localData, setLocalData] = useState(WEATHER_HISTORY[timeFilter]);
+  const [localData, setLocalData] = useState([]);
+  const [currentWeather, setCurrentWeather] = useState(null);
 
   useEffect(() => {
-    setIsSyncing(true);
-    const timer = setTimeout(() => {
-      const baseData = WEATHER_HISTORY[timeFilter];
-      const variance = selectedRegion.length % 5;
-      const variedData = baseData.map(item => ({
-        ...item,
-        temp: item.temp + (variance - 2),
-        rainfall: Math.max(0, item.rainfall + (variance * 5))
-      }));
-      setLocalData(variedData);
-      setIsSyncing(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+    const fetchWeather = async () => {
+      setIsSyncing(true);
+      try {
+        const { lat, lng } = getStateCoords(selectedState);
+        const res = await getForecast(lat, lng);
+        if (isMounted && res && res.data && res.data.daily) {
+          const mappedData = res.data.daily.map(d => ({
+            time: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+            temp: d.temp_avg,
+            rainfall: d.rainfall,
+            humidity: d.humidity,
+            wind: d.wind_avg
+          }));
+          setLocalData(mappedData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch weather", err);
+      } finally {
+        if (isMounted) setIsSyncing(false);
+      }
+    };
+    fetchWeather();
+    return () => { isMounted = false; };
   }, [selectedState, selectedRegion, timeFilter]);
+
+  // Fetch current weather separately
+  useEffect(() => {
+    let mounted = true;
+    const { lat, lng } = getStateCoords(selectedState);
+    getCurrentWeather(lat, lng)
+      .then(res => {
+        if (mounted && res?.data) setCurrentWeather(res.data);
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [selectedState]);
 
   const XAxisProps = {
     dataKey: "time",
@@ -219,8 +255,8 @@ export default function WeatherAnalytics() {
             <div className="flex items-center gap-4">
                <CloudRain size={36} />
                <div>
-                  <h3 className="text-2xl font-black tracking-tight leading-none mb-1">Rainy</h3>
-                  <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">In {selectedRegion}</p>
+                   <h3 className="text-2xl font-black tracking-tight leading-none mb-1">{currentWeather?.description || 'Loading...'}</h3>
+                   <p className="text-[10px] text-blue-100 font-bold uppercase tracking-widest">In {selectedRegion}</p>
                </div>
             </div>
          </div>
@@ -230,7 +266,7 @@ export default function WeatherAnalytics() {
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Temperature</p>
-               <h3 className="text-2xl font-black text-slate-900 leading-none">{localData[0]?.temp || 24}°C</h3>
+               <h3 className="text-2xl font-black text-slate-900 leading-none">{currentWeather?.temperature ?? localData[0]?.temp ?? '—'}°C</h3>
             </div>
          </div>
          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
@@ -239,7 +275,7 @@ export default function WeatherAnalytics() {
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Humidity</p>
-               <h3 className="text-2xl font-black text-slate-900 leading-none">62%</h3>
+               <h3 className="text-2xl font-black text-slate-900 leading-none">{currentWeather?.humidity ?? '—'}%</h3>
             </div>
          </div>
          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 hover:bg-slate-50 transition-all duration-500 group">
@@ -248,7 +284,7 @@ export default function WeatherAnalytics() {
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Wind Speed</p>
-               <h3 className="text-2xl font-black text-slate-900 leading-none">14 km/h</h3>
+               <h3 className="text-2xl font-black text-slate-900 leading-none">{currentWeather?.wind_speed ?? '—'} km/h</h3>
             </div>
          </div>
       </div>
@@ -261,17 +297,6 @@ export default function WeatherAnalytics() {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-               <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                {['days', 'weeks', 'months', 'years'].map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setTimeFilter(f)}
-                    className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${timeFilter === f ? 'bg-white shadow-md text-slate-900 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-                  >
-                    {f}
-                  </button>
-                ))}
-             </div>
 
                <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                 {[

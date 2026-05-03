@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const farmProfileSchema = new mongoose.Schema({
   userId:         { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  name:           { type: String, default: 'My Farm' },
   farmSize:       { type: Number, comment: 'in acres' },
   soilType:       { type: String, enum: ['sandy', 'loamy', 'clay', 'silt', 'red', 'black', 'alluvial', 'other'], default: 'loamy' },
   currentCrops:   [{ type: String }],
