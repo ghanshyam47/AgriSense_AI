@@ -1,94 +1,217 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Sparkles, Activity, ShieldCheck, 
   Droplets, Bug, TrendingUp, ChevronRight,
   Leaf, Thermometer, Wind, AlertCircle,
   CheckCircle2, Clock, Zap, Camera, Mic,
   MapPin, Calendar, ArrowRight, ChevronDown,
-  Edit3, MoreVertical, Plus, Scissors, X
+  Edit3, MoreVertical, Plus, Scissors, X, Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getProfile, getCurrentWeather, updateFarmProfile, addFarm, deleteFarm } from '../../services/apiClient';
 
-const AGENT_DATA = [
-  {
-    id: 1,
-    name: "Neural Node: North Valley",
-    location: "Punjab, Sector 4",
-    intelligence: 94,
-    status: "Optimal Performance",
-    models: { soil: "Active", growth: "Predictive", neural_sync: "Stable" },
-    metrics: { moisture: 62, temp: 24, n: "Optimal", p: "High", k: "Stable" },
-    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800"
-  },
-  {
-    id: 2,
-    name: "Neural Node: East River",
-    location: "Haryana, Block B",
-    intelligence: 78,
-    status: "Optimization Required",
-    models: { soil: "Analysis", growth: "Static", neural_sync: "Desync" },
-    metrics: { moisture: 38, temp: 28, n: "Stable", p: "Low", k: "Deficit" },
-    image: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=800"
-  }
+
+const FARM_IMAGES = [
+  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800",
+  "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&q=80&w=800",
+  "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=800"
 ];
 
-const INITIAL_CROPS = [
-  {
-    id: 1,
-    name: "Durum Wheat",
-    variety: "HD-2967",
-    planted: "Oct 12, 2023",
-    harvest: "Apr 2024",
-    stage: "Grain Filling",
-    progress: 75,
-    health: "Excellent",
-    icon: "🌾"
-  },
-  {
-    id: 2,
-    name: "Basmati Rice",
-    variety: "Pusa-1121",
-    planted: "Jun 05, 2023",
-    harvest: "Nov 2023",
-    stage: "Ripening",
-    progress: 92,
-    health: "Stable",
-    icon: "🍚"
-  },
-  {
-    id: 3,
-    name: "Hybrid Corn",
-    variety: "DKC-9108",
-    planted: "Jan 15, 2024",
-    harvest: "May 2024",
-    stage: "Vegetative",
-    progress: 30,
-    health: "Monitoring",
-    icon: "🌽"
-  }
-];
+const CROP_ICONS = {
+  wheat: '🌾', rice: '🍚', maize: '🌽', corn: '🌽', cotton: '🧶',
+  soybean: '🫛', chickpea: '🥜', mustard: '🌻', sugarcane: '🎋',
+  tomato: '🍅', onion: '🧅', potato: '🥔', groundnut: '🥜',
+  default: '🌱'
+};
 
-
-const AddCropModal = ({ isOpen, onClose, onAdd }) => {
-  const [formData, setFormData] = useState({ name: '', variety: '', planted: '', harvest: '' });
+const AddFarmModal = ({ isOpen, onClose, onAdd }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    farmSize: '',
+    soilType: 'loamy',
+    waterSource: 'well',
+    irrigationType: 'flood',
+    cropStage: 'Vegetative'
+  });
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name) return;
+    onAdd(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col"
+      >
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+          <h3 className="font-black text-slate-900 flex items-center gap-2.5 text-lg">
+            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+              <Plus size={18} />
+            </div>
+            Register New Farm
+          </h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-xl transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Name</label>
+            <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20" placeholder="e.g. West Field" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Size (Acres)</label>
+              <input type="number" step="0.1" required value={formData.farmSize} onChange={e => setFormData({...formData, farmSize: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20" placeholder="e.g. 5.5" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Soil Type</label>
+              <select value={formData.soilType} onChange={e => setFormData({...formData, soilType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['sandy', 'loamy', 'clay', 'silt', 'red', 'black', 'alluvial', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Water Source</label>
+              <select value={formData.waterSource} onChange={e => setFormData({...formData, waterSource: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['well', 'canal', 'borewell', 'river', 'rain', 'tank', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Irrigation Type</label>
+              <select value={formData.irrigationType} onChange={e => setFormData({...formData, irrigationType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['drip', 'sprinkler', 'flood', 'furrow', 'rain-fed', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-lg shadow-green-200">Register Farm</button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+const EditFarmModal = ({ isOpen, onClose, onUpdate, farm }) => {
+  const [formData, setFormData] = useState({
+    name: farm?.name || '',
+    farmSize: farm?.farmSize || '',
+    soilType: farm?.soilType || 'loamy',
+    waterSource: farm?.waterSource || 'well',
+    irrigationType: farm?.irrigationType || 'flood',
+    cropStage: farm?.cropStage || 'Vegetative'
+  });
+
+  useEffect(() => {
+    if (farm) {
+      setFormData({
+        name: farm.name || '',
+        farmSize: farm.farmSize || '',
+        soilType: farm.soilType || 'loamy',
+        waterSource: farm.waterSource || 'well',
+        irrigationType: farm.irrigationType || 'flood',
+        cropStage: farm.cropStage || 'Vegetative'
+      });
+    }
+  }, [farm]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onUpdate({ ...formData, farmId: farm._id });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fadeIn">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 flex flex-col"
+      >
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+          <h3 className="font-black text-slate-900 flex items-center gap-2.5 text-lg">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+              <Edit3 size={18} />
+            </div>
+            Edit Farm Details
+          </h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-xl transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Name</label>
+            <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Farm Size (Acres)</label>
+              <input type="number" step="0.1" required value={formData.farmSize} onChange={e => setFormData({...formData, farmSize: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Soil Type</label>
+              <select value={formData.soilType} onChange={e => setFormData({...formData, soilType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['sandy', 'loamy', 'clay', 'silt', 'red', 'black', 'alluvial', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Water Source</label>
+              <select value={formData.waterSource} onChange={e => setFormData({...formData, waterSource: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['well', 'canal', 'borewell', 'river', 'rain', 'tank', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Irrigation Type</label>
+              <select value={formData.irrigationType} onChange={e => setFormData({...formData, irrigationType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {['drip', 'sprinkler', 'flood', 'furrow', 'rain-fed', 'other'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">Cancel</button>
+            <button type="submit" className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-lg shadow-blue-200">Update Farm</button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+
+const AddCropModal = ({ isOpen, onClose, onAdd, farms = [] }) => {
+  const [formData, setFormData] = useState({ name: '', variety: '', planted: '', harvest: '', farmId: farms[0]?._id || '' });
+
+  useEffect(() => {
+    if (farms.length > 0 && !formData.farmId) {
+      setFormData(prev => ({ ...prev, farmId: farms[0]._id }));
+    }
+  }, [farms]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.farmId) return;
     onAdd({
-      id: Date.now(),
       name: formData.name,
       variety: formData.variety || 'Standard',
       planted: formData.planted || new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
       harvest: formData.harvest || 'TBD',
-      stage: 'Seedling',
-      progress: 5,
-      health: 'Excellent',
-      icon: '🌱'
+      farmId: formData.farmId
     });
-    setFormData({ name: '', variety: '', planted: '', harvest: '' });
+    setFormData({ name: '', variety: '', planted: '', harvest: '', farmId: farms[0]?._id || '' });
   };
 
   return (
@@ -111,6 +234,14 @@ const AddCropModal = ({ isOpen, onClose, onAdd }) => {
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {farms.length > 1 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Farm</label>
+              <select value={formData.farmId} onChange={e => setFormData({...formData, farmId: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:border-green-500">
+                {farms.map(f => <option key={f._id} value={f._id}>{f.name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crop Name</label>
             <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none" placeholder="e.g. Soybeans" />
@@ -140,17 +271,164 @@ const AddCropModal = ({ isOpen, onClose, onAdd }) => {
 };
 
 export default function Overview({ setIsChatOpen }) {
-  const [myCrops, setMyCrops] = useState(INITIAL_CROPS);
+  const [myCrops, setMyCrops] = useState([]);
   const [showAddCropModal, setShowAddCropModal] = useState(false);
+  const [showAddFarmModal, setShowAddFarmModal] = useState(false);
+  const [showEditFarmModal, setShowEditFarmModal] = useState(false);
+  const [editingFarm, setEditingFarm] = useState(null);
+  const [farmNodes, setFarmNodes] = useState([]);
+  const [isLoadingFarms, setIsLoadingFarms] = useState(true);
+  const [profile, setProfile] = useState(null);
 
-  const handleAddCrop = (newCrop) => {
-    setMyCrops([...myCrops, newCrop]);
-    setShowAddCropModal(false);
+  const loadData = async () => {
+    setIsLoadingFarms(true);
+    try {
+      const profileRes = await getProfile();
+      const farms = profileRes?.farms || [];
+      const user = profileRes?.user;
+      setProfile(profileRes);
+
+      if (farms.length > 0) {
+        const { lat, lng } = user?.location || {};
+        let weatherData = { temp: '--', humidity: '--' };
+        try {
+          const wr = await getCurrentWeather(lat || 20.5937, lng || 78.9629);
+          if (wr?.data) weatherData = { temp: Math.round(wr.data.temperature), humidity: wr.data.humidity };
+        } catch { }
+
+        const nodes = farms.map((farm, idx) => ({
+          ...farm, // Keep original data for editing
+          id: farm._id,
+          name: farm.name || `Farm ${idx + 1}`,
+          location: user?.location ? `${user.location.district || ''}, ${user.location.state || ''}` : 'India',
+          intelligence: 85,
+          status: 'Active',
+          models: {
+            soil: farm.soilType || 'Setup Needed',
+            irrigation: farm.irrigationType || 'flood',
+            water: farm.waterSource || 'well'
+          },
+          metrics: { moisture: '45', temp: weatherData.temp },
+          image: FARM_IMAGES[idx % FARM_IMAGES.length]
+        }));
+        setFarmNodes(nodes);
+
+        // Aggregate crops from all farms
+        const allCrops = [];
+        farms.forEach(farm => {
+          if (farm.currentCrops) {
+            farm.currentCrops.forEach(c => {
+              allCrops.push({
+                id: `${farm._id}-${c}`,
+                farmId: farm._id,
+                name: c.charAt(0).toUpperCase() + c.slice(1),
+                variety: 'Standard',
+                planted: 'Active',
+                harvest: 'TBD',
+                stage: farm.cropStage || 'Vegetative',
+                progress: 50,
+                health: 'Active',
+                icon: CROP_ICONS[c.toLowerCase()] || CROP_ICONS.default
+              });
+            });
+          }
+        });
+        setMyCrops(allCrops);
+      } else {
+        setFarmNodes([]);
+        setMyCrops([]);
+      }
+    } catch (err) {
+      console.error('Failed to load profile data', err);
+    } finally {
+      setIsLoadingFarms(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleAddFarm = async (farmData) => {
+    try {
+      await addFarm(farmData);
+      setShowAddFarmModal(false);
+      loadData();
+    } catch (err) {
+      console.error('Failed to add farm', err);
+    }
+  };
+
+  const handleDeleteFarm = async (farmId) => {
+    if (!window.confirm('Are you sure you want to delete this farm? All its data will be lost.')) return;
+    try {
+      await deleteFarm(farmId);
+      loadData();
+    } catch (err) {
+      console.error('Failed to delete farm', err);
+    }
+  };
+
+  const handleUpdateFarm = async (updatedData) => {
+    try {
+      await updateFarmProfile(updatedData);
+      setShowEditFarmModal(false);
+      setEditingFarm(null);
+      loadData();
+    } catch (err) {
+      console.error('Failed to update farm', err);
+    }
+  };
+
+  const handleAddCrop = async (newCrop) => {
+    try {
+      const targetFarmId = newCrop.farmId;
+      const targetFarm = profile?.farms?.find(f => f._id === targetFarmId);
+      if (!targetFarm) return;
+
+      const existingCrops = targetFarm.currentCrops || [];
+      const updatedCrops = [...existingCrops, newCrop.name.toLowerCase()];
+      await updateFarmProfile({
+        farmId: targetFarmId,
+        currentCrops: updatedCrops
+      });
+      setShowAddCropModal(false);
+      loadData();
+    } catch (err) {
+      console.error('Failed to add crop', err);
+    }
+  };
+
+  const handleDeleteCrop = async (farmId, cropName) => {
+    if (!window.confirm(`Remove ${cropName} from your cultivation list?`)) return;
+    try {
+      const targetFarm = profile?.farms?.find(f => f._id === farmId);
+      if (!targetFarm) return;
+
+      const updatedCrops = (targetFarm.currentCrops || []).filter(c => c.toLowerCase() !== cropName.toLowerCase());
+      await updateFarmProfile({
+        farmId,
+        currentCrops: updatedCrops
+      });
+      loadData();
+    } catch (err) {
+      console.error('Failed to remove crop', err);
+    }
   };
 
   return (
     <div className="space-y-0 pb-40">
-      {showAddCropModal && <AddCropModal isOpen={showAddCropModal} onClose={() => setShowAddCropModal(false)} onAdd={handleAddCrop} />}
+      {showAddCropModal && (
+        <AddCropModal 
+          isOpen={showAddCropModal} 
+          onClose={() => setShowAddCropModal(false)} 
+          onAdd={handleAddCrop} 
+          farms={profile?.farms || []}
+        />
+      )}
+      {showAddFarmModal && <AddFarmModal isOpen={showAddFarmModal} onClose={() => setShowAddFarmModal(false)} onAdd={handleAddFarm} />}
+      {showEditFarmModal && <EditFarmModal isOpen={showEditFarmModal} onClose={() => { setShowEditFarmModal(false); setEditingFarm(null); }} onUpdate={handleUpdateFarm} farm={editingFarm} />}
+      
       {/* ─── AI AGENT COMMAND CENTER ─── */}
       <section className="h-[80vh] flex flex-col items-center justify-center text-center px-4 relative">
         <motion.div 
@@ -212,18 +490,24 @@ export default function Overview({ setIsChatOpen }) {
             <p className="text-xs text-green-600/60 font-black uppercase tracking-widest mt-1">Real-time Farm Health Analytics</p>
           </div>
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 rounded-lg border border-green-200">
-                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                <span className="text-[9px] font-black text-green-700 uppercase">ML Sync: 100%</span>
-             </div>
-             <button className="text-xs font-black text-green-600 uppercase tracking-widest hover:text-green-700 transition-colors flex items-center gap-1">
-                Global Analytics <ChevronRight size={14} />
-             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {AGENT_DATA.map((node) => (
+          {isLoadingFarms ? (
+            <div className="col-span-full flex items-center justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-green-600" />
+            </div>
+          ) : farmNodes.length === 0 ? (
+            <div className="col-span-full bg-white rounded-2xl border border-dashed border-slate-200 p-16 text-center">
+              <MapPin size={40} className="mx-auto text-slate-200 mb-4" />
+              <h3 className="text-lg font-black text-slate-900 mb-2">No Farms Registered</h3>
+              <p className="text-sm text-slate-400 mb-6">Create your first farm profile to unlock AI insights.</p>
+              <button onClick={() => setShowAddFarmModal(true)} className="mx-auto flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
+                <Plus size={16} /> Register My Farm
+              </button>
+            </div>
+          ) : farmNodes.map((node) => (
             <motion.div 
               key={node.id}
               initial={{ opacity: 0 }}
@@ -298,9 +582,20 @@ export default function Overview({ setIsChatOpen }) {
                       </div>
                     ))}
                   </div>
-                  <button className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
-                    View Farm Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => { setEditingFarm(node); setShowEditFarmModal(true); }}
+                      className="bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-100"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteFarm(node.id)}
+                      className="bg-slate-50 text-red-600 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-red-50 transition-all border border-slate-100"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -336,10 +631,10 @@ export default function Overview({ setIsChatOpen }) {
                   {crop.icon}
                 </div>
                 <div className="flex gap-1">
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-300 hover:text-green-600 transition-colors">
-                       <Edit3 size={16} />
-                    </button>
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-300 hover:text-red-600 transition-colors">
+                    <button 
+                      onClick={() => handleDeleteCrop(crop.farmId, crop.name)}
+                      className="p-2 hover:bg-slate-100 rounded-lg text-slate-300 hover:text-red-600 transition-colors"
+                    >
                        <Scissors size={16} />
                     </button>
                 </div>
@@ -387,10 +682,6 @@ export default function Overview({ setIsChatOpen }) {
                        </div>
                     </div>
                  </div>
-
-                 <button className="w-full mt-4 bg-green-600 text-white py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-200">
-                    Analyze Growth Path
-                 </button>
               </div>
             </motion.div>
           ))}
