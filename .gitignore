@@ -34,7 +34,40 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# IDEs and OS
+# =============================================
+# Spring Boot / Maven (agrisense_server)
+# =============================================
+
+# Maven build output
+agrisense_server/target/
+
+# Maven wrapper jar (the scripts mvnw/mvnw.cmd are fine to commit)
+agrisense_server/.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot application secrets (NEVER push these)
+agrisense_server/src/main/resources/application-local.properties
+agrisense_server/src/main/resources/application-local.yml
+agrisense_server/src/main/resources/application-dev.properties
+agrisense_server/src/main/resources/application-dev.yml
+agrisense_server/src/main/resources/application-prod.properties
+agrisense_server/src/main/resources/application-prod.yml
+
+# IDE project files (IntelliJ, Eclipse, etc.)
+.idea/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
+.apt_generated
+
+# =============================================
+# IDEs and OS (general)
+# =============================================
 .DS_Store
 Thumbs.db
 .vscode/

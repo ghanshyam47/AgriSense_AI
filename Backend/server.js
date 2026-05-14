@@ -11,6 +11,7 @@ import { mlService } from './src/services/ml.service.js';
 const server = createServer(app);
 
 // ── Socket.IO for real-time alerts ──────────────────
+
 const io = new SocketIO(server, {
   cors: { origin: config.CORS_ORIGIN, methods: ['GET', 'POST'] },
 });
